@@ -1,9 +1,9 @@
 # STM32-SID-PLAYER
-SID and 6502 emulator, with audio output, for STM32 line of microcontrollers, compiled with Arduino IDE.
+SID chip (6581 and 8580) and 6502 CPU emulator, with audio output on pin PA8, for STM32 line of microcontrollers, compiled with Arduino IDE.
 
 My personal project that i was having fun for some time now.
 Mainly done for STM32F103C8 (Blue Pill). Should work with other STM32 microcontrollers that Arduino IDE support
-Tested also at STM32F401CCU6 dev board.
+Tested also at STM32F401CCU6 dev board (and as i see, they all have same pin (PA8) for Timer1,channel1)
 
 -Only IRQ based sids can be played (no digis, emulator is not fast enough).     
 
