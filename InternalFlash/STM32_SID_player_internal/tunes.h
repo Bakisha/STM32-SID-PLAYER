@@ -2,6 +2,7 @@
 #define _tunes
 // every file is converted to array that is stored in flashed memory. 
 // converter used is bin2c that can be found at https://sourceforge.net/projects/bin2c/files/
+// when converted, edit file with notepad and add "_data" to array name.
 
 uint8_t DEFAULT_SONG = 0; // 0 is automatic, from sid header, any other value is tune number
 
