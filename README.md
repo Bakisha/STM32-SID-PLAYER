@@ -13,7 +13,8 @@ Tested also at STM32F401CCU6 dev board.
 
 -Filter emulation is far from real SID chip, but, for me, it sound enough "SID-ish".     
 
--For now, it plays sid from internal flash memory. Sid file is converted to array.  Converter used is bin2c that can be found at https://sourceforge.net/projects/bin2c/files/
+-For now, it plays sid from internal flash memory. Sid file is converted to array.  Converter used is bin2c that can be found at https://sourceforge.net/projects/bin2c/files/  
+
 -It is configurable. On first tab in Arduino IDE is values that can be changed to match microcontroller used.
 Currently it's set for STM32F103C8.
 
@@ -45,7 +46,7 @@ Much more details are in the sketch.
     C1 = 100 nF
     C2 = 10 uF
     
- If <period> is 1 , AUDIO OUT can be connected to PA8 (no need for R1,C1 and maybe C2). I don't think 1Mhz sample rate will be in hearing range
+ If period is 1 , AUDIO OUT can be connected to PA8 (no need for R1,C1 and maybe C2). I don't think 1Mhz sample rate will be in hearing range
   
 HAVE FUN :-)
   
