@@ -22,7 +22,7 @@ void irq_handler(HardwareTimer*) {
   // STM32 boards
   // analogWrite(PA9, main_volume);
   //PWM->setCaptureCompare(1, main_volume, TICK_COMPARE_FORMAT); // scaled to only 8 bit, i'm tired of fighting against timers and stm32 board core "logic". period*clock must be less then 256
-  
+
   TIM1->CCR1 =  main_volume; //  faster version of PWM->setCaptureCompare(1, main_volume, TICK_COMPARE_FORMAT);
 
   //PB13_LOW; // test pont
@@ -172,6 +172,7 @@ void irq_handler(HardwareTimer*) {
       break;
     case 8:
       WaveformDA_noise_1 = B4095 & (pseudorandom_1 >> 11);
+
       WaveformDA_1 =  WaveformDA_noise_1;
       break;
     case 9:
@@ -1078,16 +1079,19 @@ void irq_handler(HardwareTimer*) {
 
 
 
-  OSC3 =    ((WaveformDA_3 & 0x400000) >> 11) | // OSC3 output for SID register
-            ((WaveformDA_3 & 0x100000) >> 10) |
-            ((WaveformDA_3 & 0x010000) >> 7) |
-            ((WaveformDA_3 & 0x002000) >> 5) |
-            ((WaveformDA_3 & 0x000800) >> 4) |
-            ((WaveformDA_3 & 0x000080) >> 1) |
-            ((WaveformDA_3 & 0x000010) << 1) |
-            ((WaveformDA_3 & 0x000004) << 2);
+  OSC3 =  (OSC_3 >> 16)&0xff; //
+ /*    
+ OSC3 =  (((OSC_3 & 0x400000) >> 11) | // OSC3 output for SID register
+            ((OSC_3 & 0x100000) >> 10) |
+            ((OSC_3 & 0x010000) >> 7) |
+            ((OSC_3 & 0x002000) >> 5) |
+            ((OSC_3 & 0x000800) >> 4) |
+            ((OSC_3 & 0x000080) >> 1) |
+            ((OSC_3 & 0x000010) << 1) |
+            ((OSC_3 & 0x000004) << 2) )&0xff;
+  */
   //
-  ENV3 = (Volume_3 >> 4); // value for REG_28
+  ENV3 = (ADSR_volume_3)&0xff; ;// ((Volume_3 + 0x80000) >> 12) & 0xff; // value for REG_28
   //
   SID[25] = POTX;
   SID[26] = POTY;
