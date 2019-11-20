@@ -1,6 +1,6 @@
 
-#define USE_CORE_STM32_ST // uncomment if using this core. Set in preferences: https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json and search stm32 in board manager. Choose stm32 cores by ST Microelectronics
-//#define USE_MAPLE_CORE // // uncomment if using this core. Set in preferences: http://dan.drown.org/stm32duino/package_STM32duino_index.json and search stm32F1 in board manager. Choose STM32F1xx core
+//#define USE_CORE_STM32_ST // uncomment if using this core. Set in preferences: https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json and search stm32 in board manager. Choose stm32 cores by ST Microelectronics
+#define USE_MAPLE_CORE // // uncomment if using this core. Set in preferences: http://dan.drown.org/stm32duino/package_STM32duino_index.json and search stm32F1 in board manager. Choose STM32F1xx core
 
 // just make sure right board is selected  from board menu or you'll have compiling errors
 // it's recommended to set optimatization on FASTEST -O3 (from tool menu of Arduino IDE). (for some reasons LTO optimatization and Newlib Standard  doesn't work)
@@ -75,8 +75,6 @@ void loop() {// One 6502 instruction per loop
 
 
 // INFO:
-// Working with STM32 boards, add in board manager:
-// https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json
 
 //      - only music based on raster irq (play address must not be 0, will not work with custom music player inside .sid file)
 //      - multi-speed .sid files are not supported, ( emulation of 6502 is not fast enough to keep up ).
