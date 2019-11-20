@@ -13,7 +13,7 @@ inline  uint8_t read6502(uint16_t address) {
   }
   if ((address >= 0xD400) && (address < 0xD420)) {
     //PB13_HIGH;
-    //STAD4XX = 1; // sid read
+    STAD4XX = 1; // sid read
     return_value = SID[address - 0xD400]; // TODO: make it unreadable //   SID
   }
 
@@ -174,7 +174,7 @@ inline void write6502(uint16_t address, uint8_t value) {
         // Multiply with 1.048576 to facilitate division by 1 000 000 by right-
         // shifting 20 times (2 ^ 20 = 1048576).
         // w0 = static_cast<sound_sample>(2*pi*f0[fc]*1.048576);
-        w0 = w0_constant_part * FILTER_HiLo;//
+        w0 = w0_constant_part * (FILTER_HiLo);//
         // w0_ceil_dt = w0 <= w0_max_dt ? w0 : w0_max_dt;
         if (w0 < w0_max_dt) {
           w0_ceil_dt = w0;

@@ -1,8 +1,7 @@
 #ifndef _tunes
 #define _tunes
-// every file is converted to array that is stored in flashed memory. 
+// every file is converted to array that is stored in flashed memory.
 // converter used is bin2c that can be found at https://sourceforge.net/projects/bin2c/files/
-// when converted, edit file with notepad and add "_data" to array name.
 
 uint8_t DEFAULT_SONG = 0; // 0 is automatic, from sid header, any other value is tune number
 
@@ -29,12 +28,18 @@ uint8_t DEFAULT_SONG = 0; // 0 is automatic, from sid header, any other value is
 ////////////////////////////////////////////////////////////////////////////////        good
 
 #include"tunes/f103/Smold.h" // // MUSICIANS\M\Mahoney\Smold.sid  // sound good
-//#include"tunes/f103/Alien.h" // works only with filters disabled // /MUSICIANS/C/Clansey_Paul/Alien.sid $9088-$9263 Init: $908b Play: $90c2 // TODO: see why it's not playing with filters.
+//#include"tunes/f103/Alien.h" //  // /MUSICIANS/C/Clansey_Paul/Alien.sid $9088-$9263 Init: $908b Play: $90c2 // TODO: see what's wrong, works good with filters disabled. Bug in ENV3? Or ADSR? Or just bad filter emulation?
 //#include"tunes/f103/Out4Just.h" // \MUSICIANS\J\Jonny\Out4Just.sid 03:37 // good for combined waveforms/noise testing
 //#include"tunes/f103/Lazy_Jones_remix.h" // MUSICIANS\M\Mahoney\Lazy_Jones_remix.sid
 //#include"tunes/f103/Blond_Blubber.h" //
 //#include"tunes/f103/Deep.h" // good for resonance testing
 
+// Rowlands_Steve
+//#include"tunes/f103/Cyberdyne_Warrior.h"
+//#include"tunes/f103/Retrograde.h"
+//#include"tunes/f103/Creatures.h"
+//#include"tunes/f103/Creatures_2.h" // not quite, but very close
+//#include"tunes/f103/Mayhem_in_Monsterland.h" // need to check 1st tune (and test others. 2nd tune plays ok)
 
 
 //#include"tunes/f103/Coma_Light_VIII_part_11.h"
@@ -57,7 +62,7 @@ uint8_t DEFAULT_SONG = 0; // 0 is automatic, from sid header, any other value is
 //#include"tunes/f103/Legend_of_Kage.h"
 //#include"tunes/f103/Game_Music.h" //
 //#include"tunes/f103/BubbleBobble.h"  // remix
-//#include"tunes/f103/Bubble_Bobble.h" // 
+//#include"tunes/f103/Bubble_Bobble.h" //
 
 //#include"tunes/f103/Voyage.h"
 //#include"tunes/f103/Recovering_Heart.h" // \MUSICIANS\J\Jonny\Recovering_Heart.sid //  Giana sisters remix
@@ -66,9 +71,8 @@ uint8_t DEFAULT_SONG = 0; // 0 is automatic, from sid header, any other value is
 
 //#include"tunes/f103/Random_2.h"
 
-//#include"tunes/f103/Creatures_2.h" // not quite, but very close
-//#include"tunes/f103/Mayhem_in_Monsterland.h" // need to check 1st tune (and test others. 2nd tune plays ok)
 
+//#include"tunes/f103/Elite.h" // info from sid say it is 50Hz player, but it is kinda slow. More like 55 Hz
 
 //#include"tunes/f103/Coma_Light_13_tune_3.h" // not bad, but must to look into ADSR again, something is not right
 //#include"tunes/f103/Comaland_tune_4.h" //
@@ -76,6 +80,7 @@ uint8_t DEFAULT_SONG = 0; // 0 is automatic, from sid header, any other value is
 //#include"tunes/f103/Infusion.h" //
 //#include"tunes/f103/Plush2K.h" //
 //#include"tunes/f103/Red_Alert.h" //
+
 
 //#include"tunes/f103/CJs_Elephant_Antics.h" //
 
@@ -119,7 +124,7 @@ uint8_t DEFAULT_SONG = 0; // 0 is automatic, from sid header, any other value is
 
 //#include"tunes/f103/Navy_Moves.h" //
 //#include"tunes/f401/Turrican_3.h" //
-
+//#include"tunes/f103/DRAX_Tune.h" //
 
 ////////////////////////////////////////////////////////////////////////////// test sids
 //#include"tunes/f103/delaybug.h"

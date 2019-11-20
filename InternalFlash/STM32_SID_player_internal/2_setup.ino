@@ -7,11 +7,12 @@ inline void Init6502() {
 
     LOW_RAM = true;
     // hack to enable playing sids by relocating it's init/play address to lower MPU RAM address,(Mainly for STM32F103C)
-    // in RAM, player is at 0x300, .sid file data is at 0x400
+    // in RAM, player is at 0x300, .sid file data start at 0x400
+    // any address between sid_start and sid_start + RAM_size is read/write, addresses above sid_start + RAM_size is read only
   }
   else {
     LOW_RAM = false;
-    // Lets see how much can i add before it crashed
+    // sid start, init and play address is in axact positions in RAM
   }
   //
   // Blue6502 init
@@ -60,63 +61,44 @@ inline void Init6502() {
 // Hardware timers initalization
 inline void InitHardware() {
 
-  // BlueSID -  // init irq
+  // init irq
 
   noInterrupts();
-  /*
-    pinMode(PB13, OUTPUT); // test pin 1
-    pinMode(PB12, OUTPUT); // test pin 2
-    pinMode(PB14, INPUT_PULLDOWN); // sense pin (fake PHI2 test)
 
 
-    pinMode (PA8, PWM); //   main volume output pin. at 1uS timer1, there is 72 (<magic_number>) different values of "volume"
+#ifdef  USE_MAPLE_CORE
+  pinMode(PB13, OUTPUT); // test pin 1
+  pinMode(PB12, OUTPUT); // test pin 2
+  pinMode(PB14, INPUT_PULLDOWN); // sense pin (fake PHI2 test)
 
 
-    digitalWrite(PB12, HIGH);
-    digitalWrite(PB13, HIGH);
-    //pwmWrite(PA8, max_step / 2); // 50% pwm for now
+  pinMode (PA8, PWM); //   main volume output pin. at 1uS timer1, there is 72 (<magic_number>) different values of "volume"
+
+
+  digitalWrite(PB12, HIGH);
+  digitalWrite(PB13, HIGH);
+  //pwmWrite(PA8, max_step / 2); // 50% pwm for now
 
 
 
-    // Timer1 Channel is on PA8 PWM Pin (i know, i looked at bluepill's pinout)
-    // Timer1.setMode(TIMER_CH1, TIMER_OUTPUTCOMPARE); // no need, it is already set with: pinMode(PA8, PWM);
-    Timer1.setPeriod(period); // every 1 microseconds there will be 72 values of pwm (because bluepill is running at 72Mhz). It can be only be bigger then 1, but smaller then <multiplier>.
-    // Timer1.setCompare(TIMER_CH1, 1);      //  pwm of timer - no need to set it now, IRQ will deal with it
+  // Timer1 Channel is on PA8 PWM Pin (i know, i looked at bluepill's pinout)
+  // Timer1.setMode(TIMER_CH1, TIMER_OUTPUTCOMPARE); // no need, it is already set with: pinMode(PA8, PWM);
+  Timer1.setPeriod(period); // every 1 microseconds there will be 72 values of pwm (because bluepill is running at 72Mhz). It can be only be bigger then 1, but smaller then <multiplier>.
+  // Timer1.setCompare(TIMER_CH1, 1);      //  pwm of timer - no need to set it now, IRQ will deal with it
 
 
-    // Timer2 for IRQ
-    Timer2.setPrescaleFactor(1);
-    Timer2.setMode(TIMER_CH2, TIMER_OUTPUTCOMPARE);
-    Timer2.setPeriod(multiplier); // every xx microseconds interrupt run (total overhead us around 3.4uS +  code runtime (rest is time left for 6502 emulator )
-    Timer2.setCompare(TIMER_CH2, 1);      // not needed to put any value, it's irq, it's triggering on overflow, not on compare
-    Timer2.attachInterrupt(TIMER_CH2, irq_handler); // i could use better name
-  */
+  // Timer2 for IRQ
+  Timer2.setPrescaleFactor(1);
+  Timer2.setMode(TIMER_CH2, TIMER_OUTPUTCOMPARE);
+  Timer2.setPeriod(multiplier); // every xx microseconds interrupt run (total overhead us around 3.4uS +  code runtime (rest is time left for 6502 emulator )
+  Timer2.setCompare(TIMER_CH2, 1);      // not needed to put any value, it's irq, it's triggering on overflow, not on compare
+  Timer2.attachInterrupt(TIMER_CH2, irq_handler); // i could use better name
+#endif
 
-  /*
-    // PA8 PWM output
-    //
-    pinMode(PA8, OUTPUT);
 
-    analogWriteResolution(8); // 8bit resolution - 0-255
-    analogWriteFrequency(1000000 / period);
-    // Not as easy as maple core, but ok
-    // Using analog write to write values between 0 and 255
-    analogWrite(PA8, ((1 << 8) / 2)); // set as 50% PWM
-  */
 
-  /*
-      pinMode(PA8, OUTPUT);
-    pinMode(PB13, OUTPUT);
-    pinMode(PB12, OUTPUT);
-    analogWriteResolution(8); // 16bit resolution - 0-65535
-    analogWriteFrequency(1000000 / period);
-    // Not as easy as maple core, but ok
-    // Using analog write to write values between 0 and 65535
-    analogWrite(PA8, ((1 << 8) / 2)); // set as 50% PWM
-    pinMode(PB13, OUTPUT);
-    pinMode(PB12, OUTPUT);
-  */
 
+#ifdef USE_CORE_STM32_ST
   pinMode(PA8, OUTPUT);
   pinMode(PB13, OUTPUT);
   pinMode(PB12, OUTPUT);
@@ -136,6 +118,8 @@ inline void InitHardware() {
   IRQtimer->setOverflow(multiplier, MICROSEC_FORMAT); // irq will trigger every <multiplier> uS
   IRQtimer->attachInterrupt(irq_handler); // i could use a mega-super-ultra better name
   IRQtimer->resume();
+#endif
+
 
 
   // delay(500);

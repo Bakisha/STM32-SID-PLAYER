@@ -292,6 +292,7 @@ const uint32_t  ADSR_LFSR15 [] = {
   11719,  //   3 s*1.0MHz/256 = 11718.75
   19531,  //   5 s*1.0MHz/256 = 19531.25
   31250   //   8 s*1.0MHz/256 = 31250.00
+
 };
 // value is 1 per 1uS// / 256 is becasue there are 256 values of ADSR volume
 // 2ms,8ms,16ms,24ms,38ms,56ms,68ms,80ms,100ms,250ms,500ms,800ms,1s,3s,5,8s for attack
@@ -1025,18 +1026,22 @@ const uint8_t AND_mask [] {
 
 // for quick pin testing on PB13/PB12 (test pin for my signal analyzer)
 
-// STM32duino boards
-//#define PB13_HIGH (GPIOB_BASE)->BSRR = BIT(13) // macro for fast pin ON
-//#define PB13_LOW  (GPIOB_BASE)->BRR  = BIT(13) // macro for fast pin OFF
-//#define PB12_HIGH (GPIOB_BASE)->BSRR = BIT(12) // macro for fast pin ON
-//#define PB12_LOW  (GPIOB_BASE)->BRR  = BIT(12) // macro for fast pin OFF
 
-// STM32 boards
+#ifdef USE_MAPLE_CORE
+// Maple boards
+#define PB13_HIGH (GPIOB_BASE)->BSRR = BIT(13) // macro for fast pin ON
+#define PB13_LOW  (GPIOB_BASE)->BRR  = BIT(13) // macro for fast pin OFF
+#define PB12_HIGH (GPIOB_BASE)->BSRR = BIT(12) // macro for fast pin ON
+#define PB12_LOW  (GPIOB_BASE)->BRR  = BIT(12) // macro for fast pin OFF
+#endif
+
+#ifdef USE_CORE_STM32_ST
+// STM32 ST boards
 #define PB13_HIGH  GPIOB->BSRR = GPIOB->ODR        | 0x00002000 // macro for fast pin ON
 #define PB13_LOW   GPIOB->BSRR = (GPIOB->ODR<<16)  | 0x20000000 // macro for fast pin OFF
 #define PB12_HIGH  GPIOB->BSRR = GPIOB->ODR        | 0x00001000// macro for fast pin ON
 #define PB12_LOW   GPIOB->BSRR = (GPIOB->ODR<<16)  | 0x10000000 // macro for fast pin OFF
-
+#endif
 
 // normal
 //#define PB13_HIGH digitalWrite(PB13,HIGH);
