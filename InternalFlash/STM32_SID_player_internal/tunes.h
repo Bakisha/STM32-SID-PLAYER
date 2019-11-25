@@ -6,7 +6,7 @@
 // uncomment only one
 
 
-#include "d:/My Documents/Documents/Arduino/STM32/HVSC71/MUSICIANS/G/Gray_Matt/Last_Ninja_2.h"
+//#include "d:/My Documents/Documents/Arduino/STM32/HVSC71/MUSICIANS/G/Gray_Matt/Last_Ninja_2.h"
 
 
 //
@@ -22,7 +22,7 @@
 //#include"tunes/f401/Lemmings.h" //
 //#include"tunes/f401/house.h" // filter tester (Fanta really likes filters, unlike SID in my c64)
 //#include"tunes/f401/Nobby_the_Aardvark.h"
-//#include"tunes/f401/Last_Ninja_2.h" // on f103, all tunes (0-12) are working
+#include"tunes/f401/Last_Ninja_2.h" // on f103, all tunes (0-12) are working
 //#include"tunes/f401/Turrican_2-The_Final_Fight.h" // on f103, tunes 1,2,3,4,5,6,7 are working (0 and 8 don't)
 //#include"tunes/f401/R-Type.h"  // only tunes 0,1,2,3 are working on f103
 //#include"tunes/f401/Katakis.h"
