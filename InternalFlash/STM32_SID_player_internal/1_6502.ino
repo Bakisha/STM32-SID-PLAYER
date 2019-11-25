@@ -83,6 +83,7 @@ inline void write6502(uint16_t address, uint8_t value) {
         SYNC_bit_voice_1 = ( (SID[4] >> 1 ) & 1) ; //
         Gate_bit_1 = SID[4] & 1;   //
 
+        //waveform_switch_1 = (noise_bit_voice_1 << 3) | (pulse_bit_voice_1 << 2) | (sawtooth_bit_voice_1 << 1) | (triangle_bit_voice_1); // for barebone version
         waveform_switch_1 =  ( SID[4] >> 4);
 
         break;
@@ -118,6 +119,7 @@ inline void write6502(uint16_t address, uint8_t value) {
         SYNC_bit_voice_2 = ( (SID[11] >> 1 ) & 1) ; //
         Gate_bit_2 = SID[11] & 1;   //
 
+        //waveform_switch_2 = (noise_bit_voice_2 << 3) | (pulse_bit_voice_2 << 2) | (sawtooth_bit_voice_2 << 1) | (triangle_bit_voice_2);
         waveform_switch_2 = 0x0f & ( SID[11] >> 4);
 
         break;
@@ -154,6 +156,7 @@ inline void write6502(uint16_t address, uint8_t value) {
         SYNC_bit_voice_3 = ( (SID[18] >> 1 ) & 1) ; //
         Gate_bit_3 = SID[18] & 1;   //
 
+        //waveform_switch_3 = (noise_bit_voice_3 << 3) | (pulse_bit_voice_3 << 2) | (sawtooth_bit_voice_3 << 1) | (triangle_bit_voice_3); // for barebone version
         waveform_switch_3 = 0x0f & ( SID[18] >> 4);
         break;
       case 19:
@@ -174,7 +177,7 @@ inline void write6502(uint16_t address, uint8_t value) {
         // Multiply with 1.048576 to facilitate division by 1 000 000 by right-
         // shifting 20 times (2 ^ 20 = 1048576).
         // w0 = static_cast<sound_sample>(2*pi*f0[fc]*1.048576);
-        w0 = w0_constant_part * (FILTER_HiLo);//
+        w0 = w0_constant_part * (FILTER_HiLo + 0x01); // 0x01 offset testing
         // w0_ceil_dt = w0 <= w0_max_dt ? w0 : w0_max_dt;
         if (w0 < w0_max_dt) {
           w0_ceil_dt = w0;
@@ -191,7 +194,7 @@ inline void write6502(uint16_t address, uint8_t value) {
         // Multiply with 1.048576 to facilitate division by 1 000 000 by right-
         // shifting 20 times (2 ^ 20 = 1048576).
         // w0 = static_cast<sound_sample>(2*pi*f0[fc]*1.048576);
-        w0 = w0_constant_part * FILTER_HiLo;//
+        w0 = w0_constant_part * (FILTER_HiLo + 0x1); //
 
         // w0_ceil_dt = w0 <= w0_max_dt ? w0 : w0_max_dt;
         if (w0 < w0_max_dt) {

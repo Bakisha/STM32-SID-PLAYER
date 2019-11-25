@@ -1,6 +1,10 @@
 //this could be in setup{}
 // but for now, i don't won't to make more mess then it is in main file
 
+#ifdef USE_CORE_STM32_ST
+HardwareTimer *PWM = new HardwareTimer(TIM1); // need to set it up here, before setup{}
+#endif
+
 inline void Init6502() {
 
   if ( (RAM_SIZE ) < (SID_end ) ) {
@@ -39,7 +43,7 @@ inline void Init6502() {
 
   // transfer sid to RAM
 
-  for (uint16_t i = 0; i < SID_size - 0x7e; i++) { // data start at $7e offset
+  for (uint16_t i = 0; i < SID_data_size - 0x7e; i++) { // data start at $7e offset
 
     if ( LOW_RAM == true) {
       if (i < (RAM_SIZE - 0x0400) ) { //  hack to load only amount of bytes that can fit into RAM from sid file. Hopefully, player routine is the beginning of file, and tune data is in the end

@@ -1,12 +1,18 @@
 #ifndef _tunes
 #define _tunes
-// every file is converted to array that is stored in flashed memory.
+// every file is converted to array that is stored in flash memory.
 // converter used is bin2c that can be found at https://sourceforge.net/projects/bin2c/files/
 
-uint8_t DEFAULT_SONG = 0; // 0 is automatic, from sid header, any other value is tune number
+// uncomment only one
+
+
+#include "d:/My Documents/Documents/Arduino/STM32/HVSC71/MUSICIANS/G/Gray_Matt/Last_Ninja_2.h"
+
+
+//
 
 ///////////////////////////////////////////////  S I D     F I L E S /////////////////////////////////////////////////////////////
-// uncomment only one
+
 ////////////////////////////////////////////////////////////////////////////////
 //f401 - sids occupy memory less then 61440 bytes (and must end before $f400 ) (most of them don't work with f103)
 ////////////////////////////////////////////////////////////////////////////////
@@ -27,7 +33,7 @@ uint8_t DEFAULT_SONG = 0; // 0 is automatic, from sid header, any other value is
 //f103 - sids less then 14500 bytes (and not using using memory outside it's memory space )
 ////////////////////////////////////////////////////////////////////////////////        good
 
-#include"tunes/f103/Smold.h" // // MUSICIANS\M\Mahoney\Smold.sid  // sound good
+//#include"tunes/f103/Smold.h" // // MUSICIANS\M\Mahoney\Smold.sid  // sound good
 //#include"tunes/f103/Alien.h" //  // /MUSICIANS/C/Clansey_Paul/Alien.sid $9088-$9263 Init: $908b Play: $90c2 // TODO: see what's wrong, works good with filters disabled. Bug in ENV3? Or ADSR? Or just bad filter emulation?
 //#include"tunes/f103/Out4Just.h" // \MUSICIANS\J\Jonny\Out4Just.sid 03:37 // good for combined waveforms/noise testing
 //#include"tunes/f103/Lazy_Jones_remix.h" // MUSICIANS\M\Mahoney\Lazy_Jones_remix.sid
@@ -40,6 +46,7 @@ uint8_t DEFAULT_SONG = 0; // 0 is automatic, from sid header, any other value is
 //#include"tunes/f103/Creatures.h"
 //#include"tunes/f103/Creatures_2.h" // not quite, but very close
 //#include"tunes/f103/Mayhem_in_Monsterland.h" // need to check 1st tune (and test others. 2nd tune plays ok)
+
 
 
 //#include"tunes/f103/Coma_Light_VIII_part_11.h"
@@ -102,9 +109,12 @@ uint8_t DEFAULT_SONG = 0; // 0 is automatic, from sid header, any other value is
 //Tel_Jeroen
 //#include"tunes/f103/Gaplus.h" //
 
+//#include"tunes/f103/Mr_Marvellous.h"  
+
 ///////////////////////////////////////////////////////////////////////////////         almoust sound like SID
 
 //#include"tunes/f103/Scene_plus_III.h" //
+//#include"tunes/f103/Wonderland_X_Introtune.h"
 //#include"tunes/f103/Spellbound_Dizzy.h" // looks ok, but use lot of irq time (actually, it need lot of cycles per rastertime for 6502 emulation) - good for "worst case" testing
 //#include"tunes/f103/Magic_Land_Dizzy.h" // it plays, but not perfect
 //#include"tunes/f103/No_Digis.h" //
@@ -126,6 +136,16 @@ uint8_t DEFAULT_SONG = 0; // 0 is automatic, from sid header, any other value is
 //#include"tunes/f401/Turrican_3.h" //
 //#include"tunes/f103/DRAX_Tune.h" //
 
+//#include"tunes/f103/Mythus_every_BIT_you_take.h" // it should, bit it isn't. Bad filter emulation?
+
+
+//f401 TODOTEST
+// #include"tunes/f103/Vendetta.h"  // 
+// #include"tunes/f103/Albedo.h"  // 
+//#include"tunes/f103/Rubicon.h"  // 
+//#include"tunes/f103/great-giana-sisters-c64-SID-ID5914.h"  // founded on internet, not HVSC
+
+
 ////////////////////////////////////////////////////////////////////////////// test sids
 //#include"tunes/f103/delaybug.h"
 //#include"tunes/f103/sndstarttest.h"
@@ -143,5 +163,7 @@ uint8_t DEFAULT_SONG = 0; // 0 is automatic, from sid header, any other value is
 //#include"tunes/f103/dactest.h" // TODO
 //#include"tunes/f103/adsrtest.h" //TODO
 
+
+//Blues_Muz
 
 #endif

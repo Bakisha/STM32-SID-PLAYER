@@ -5,7 +5,7 @@
 // main SID magic. Every voice is calculated
 
 #ifdef USE_MAPLE_CORE
-void irq_handler(void) { // uncomment for Maple core
+void irq_handler(void) { //
 #endif
 
 #ifdef USE_CORE_STM32_ST
@@ -1020,7 +1020,8 @@ void irq_handler(void) { // uncomment for Maple core
 
     Volume_filter_input = int32_t(Volume_filter_input) >> 7; // lower it to 13bit
 
-    // w0 and Q is calculated emulator's address decoder (to save few us here)
+    // w0 and Q is calculated emulator's address decoder (to save few uS here)
+    // reSID:
     // Maximum delta cycles for the filter to work satisfactorily under current
     // cutoff frequency and resonance constraints is approximately 8.
 
@@ -1031,11 +1032,12 @@ void irq_handler(void) { // uncomment for Maple core
       if (delta_t < delta_t_flt) {
         delta_t_flt = delta_t;
       }
-
+      // reSID:
       // delta_t is converted to seconds given a 1MHz clock by dividing
       // with 1 000 000. This is done in two operations to avoid integer
       // multiplication overflow.
 
+      // reSID:
       //// Calculate filter outputs.
       //// Vhp = Vbp/Q - Vlp - Vi;
       //// dVbp = -w0*Vhp*dt;
@@ -1081,7 +1083,7 @@ void irq_handler(void) { // uncomment for Maple core
     if (Volume < 0) Volume = 0;
     if (Volume > 0xfffff) Volume = 0xfffff; // remove clipping (resonance sensitivity), just in case..
 
-    // main_volume_32bit = ( magic_number * period * ((Volume+0x80000)&0xfffff) * MASTER_VOLUME) >> 24; // This could be as large as unsigned 40bit number before shifting, break it down into smaller steps to keep it inside 32bit number bounderies
+    // main_volume_32bit = ( magic_number * period * ((Volume)&0xfffff) * MASTER_VOLUME) >> 24; // This could be as large as unsigned 40bit number before shifting, break it down into smaller steps to keep it inside 32bit number bounderies
     main_volume_32bit = (Volume ) ; //& 0xfffff ; // 20bit
     main_volume_32bit = (main_volume_32bit * magic_number); // 28bit
     main_volume_32bit = (main_volume_32bit) >> 12; // 28-12 = 16bit
@@ -1215,7 +1217,7 @@ void irq_handler(void) { // uncomment for Maple core
 
   // copy code bellow for every instruction to be executed in irq
   /*
-    PB12_HIGH; // if last instruction had SID access , wait for next irq to serve it
+    PB12_HIGH; //
     if (JSR1003 == 1) { // JSR1003 check
       if (VIC_irq_request == 1) {
         JSR1003 = 0;
@@ -1236,9 +1238,10 @@ void irq_handler(void) { // uncomment for Maple core
 
   // IRQ times measured at different setting:
 
-
+  /////////////////////////////////////////////////////////////////////////////
   // STM32F013C8T6 (some of them are with 128k or flash)
   //
+  ///////////////////////////////////////
   //FILTER_FREQUENCY: 8000
   //FILTER_SENSITIVITY: 8
   //USE_FILTERS: YES
@@ -1247,8 +1250,15 @@ void irq_handler(void) { // uncomment for Maple core
   //6502 instruction time: 4-9uS
   // Recommended multiplier: 32 (uS)
   //
+  ///////////////////////////////////////
+  //FILTER_FREQUENCY: 12500
+  //FILTER_SENSITIVITY: 2
+  //USE_FILTERS: YES
   //
+  //IRQ Time: 24uS (+/- 2uS)
+  //6502 instruction time: 4-9uS
+  // Recommended multiplier: 32 (uS)
   //
-  //
+  ///////////////////////////////////////
   //
   //

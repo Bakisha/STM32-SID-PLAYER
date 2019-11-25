@@ -11,7 +11,7 @@ const uint8_t magic_number = F_CPU / 1000000 ; // PWM resolution - number of cyc
 
 
 uint16_t SID_start = SID_data[0x7c] + (SID_data[0x7d] * 256); // get start address from .sid file
-uint16_t SID_end = SID_start + SID_size - 0x7e ; // end address of music routine , not included "busy blocks", aka, ram needed after end of actual sid file. If sid is longer then available RAM, everything above available RAM will be read-only (from SID_data[] array)
+uint16_t SID_end = SID_start + SID_data_size - 0x7e ; // end address of music routine , not included "busy blocks", aka, ram needed after end of actual sid file. If sid is longer then available RAM, everything above available RAM will be read-only (from SID_data[] array)
 
 uint16_t SID_play = SID_data[13] + (SID_data[12] * 256); // sid play address
 uint16_t SID_init = SID_data[11] + (SID_data[10] * 256); // sid init address
