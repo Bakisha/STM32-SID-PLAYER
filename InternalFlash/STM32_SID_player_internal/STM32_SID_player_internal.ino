@@ -12,7 +12,11 @@
 // play with these two values to determine what is "SID-like" sound
 // NOTE: for now, filters are linear in all frequencies range
 
-#define RAM_SIZE 0x3600 + 0x400  // Set the amount of RAM that can be available to emulator (leave at least 2000 bytes for locals) (depends of microcontroller's RAM and core used)
+// Set the amount of RAM that can be available to emulator (leave at least 2000 bytes for locals) (depends of microcontroller's RAM and core used)
+#define RAM_SIZE 0x3600 + 0x400  // STM32F103C8 - STM32duino CORE 
+//#define RAM_SIZE 0x4000 + 0x400  // STM32F103C8 - STM32 ST CORE 
+//#define RAM_SIZE 0xE400 + 0x400  // STM32F401CC - STM32 ST CORE with (USB)serial enabled
+//#define RAM_SIZE 0xF000 + 0x400  // STM32F401CC - STM32 ST CORE with (USB)serial disabled
 
 #define USE_CHANNEL_1 // uncomment, for testing (affect only volume, not the calculations)
 #define USE_CHANNEL_2 // (but it will have effect on filter output in case of multiple voices is filtered)
