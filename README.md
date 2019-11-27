@@ -54,7 +54,7 @@ Much more details are in the sketch.
     C2 = 10 uF
     P1 = 10KOhm potentiometer
   
- If period is 1 , AUDIO OUT can be connected to PA8 (no need for R1,C1 and maybe C2). I don't think 1Mhz sample rate will be in hearing range
+ If period is 1 , there is no need for R1 and C1. 
   
 Make sure right board is selected in Arduino IDE, and uncomment line depending of what core from board manager is used. 
   
