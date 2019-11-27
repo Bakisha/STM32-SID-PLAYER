@@ -25,13 +25,13 @@
 #define TUNE_PLAY_TIME 180 // Can't implement songlenghts, manual values are needed (in seconds) // TODO: add buttons to change subtunes // TODO2: try to determine silence in output, and skip to next tune
 uint8_t DEFAULT_SONG = 0; // 0 is automatic, from sid header, any other value is tune number
 
-const uint8_t period = 8;// period for timer1, for frequency and resolution of PWM in uS
+const uint8_t period = 4;// period for timer1, for frequency and resolution of PWM in uS
 // can be changed, lowest is 1. Must be less or equal of variable "multiplier". Can be squeeky.
 // value of 1 represent number of cpu cycles in 1 uS. (cpu_speed * period) is PWM resolution .
 // Best to set as multiplier, then lower it untill squeeks are gone
 // If set 1, it could be used even without external low-pass filter
 
-const uint8_t multiplier = 40 ; // (byte) set this for interrupt speed in uS (in general, how much slower then real SID). Don't set too small, irq might overlap (music will play  slower or won't play at  all)
+const uint8_t multiplier = 32 ; // (byte) set this for interrupt speed in uS (in general, how much slower then real SID). Don't set too small, irq might overlap (music will play  slower or won't play at  all)
 // needed for Timer2 (it also affect calculations in frequency multiplications per irq- it may affect tunes that uses Test-bit).
 // Ideally, this should be 1 (to cycle-exact emulate SID), but irq will need to respond and exit in next 500nS
 // Not with Bluepill, but for 2$ board, i'll make what i can
@@ -41,6 +41,13 @@ const uint8_t multiplier = 40 ; // (byte) set this for interrupt speed in uS (in
 // 32 (+/-4) for normal (72Mhz) speed
 // You could say that SAMPLE_RATE=1000000/multiplier
 // Sound is not buffered, volume is calculated every <multiplier> uS
+
+// Based on current code, optimal timing is:
+// STM32F103C8 (72Mhz) :
+// 32 (+/-4) 
+// STM32F401CC:
+// 20 (+/-4)
+
 
 #include "tunes.h" // pick only one
 // #include "HVSC.h" // better not to include it, easier navigation when copied few lines from "HVSC.h" to "tunes.h" 
