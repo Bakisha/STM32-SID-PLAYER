@@ -101,14 +101,17 @@ void loop() {// One 6502 instruction per loop
 //    .------------|----.
 //     |G         P|
 //     |N         A|
-//     |D         8--R1----|------C2---------> OUDIO OUT
-//     |                   C
-//     |                   1
-//     .-------------------|------------------ GND
+//     |D         8--R1----|------C2---------|
+//     |                   |                 --
+//     |                   C                 || P1
+//     |                   1                 ||<--------- OUDIO OUT
+//     |                   |                 --
+//     .-------------------|------------------|---------- GND
 //                        GND
 //    R1 = 100-500 Ohm
 //    C1 = 100 nF
 //    C2 = 10 uF
+//    P1 = 10KOhm potentiometer
 //
 // If <period> is 1 , AUDIO OUT can be connected to PA8 (no need for R1,C1 and maybe C2). I don't think 1Mhz sample rate will be in hearing range
 
