@@ -3,12 +3,11 @@
 // IRQ time: see at the bottom of this file
 
 // main SID magic. Every voice is calculated
-
-#ifdef USE_MAPLE_CORE
+#ifdef USE_STM32duino_CORE
 void irq_handler(void) { //
 #endif
 
-#ifdef USE_CORE_STM32_ST
+#ifdef USE_STM32_ST_CORE
   void irq_handler(HardwareTimer*) {
 #endif
 
@@ -19,7 +18,7 @@ void irq_handler(void) { //
 
 
 
-#ifdef USE_MAPLE_CORE
+#ifdef USE_STM32duino_CORE
     // STM32duino boards
     // Timer1.pause(); // need to pause timer to be able to set value inside irq. Not needed when using ( Timer1.setCompare(TIMER_CH1, main_volume); )
     // TIMER1->CCR1 =  main_volume; //  faster version of Timer1.setCompare(TIMER_CH1, main_volume);
@@ -28,7 +27,7 @@ void irq_handler(void) { //
 #endif
 
 
-#ifdef USE_CORE_STM32_ST
+#ifdef USE_STM32_ST_CORE
     // STM32 boards
     // analogWrite(PA9, main_volume);
     //PWM->setCaptureCompare(1, main_volume, TICK_COMPARE_FORMAT); // scaled to only 8 bit, i'm tired of fighting against timers and stm32 board core "logic". period*clock must be less then 256

@@ -1,7 +1,7 @@
 //this could be in setup{}
 // but for now, i don't won't to make more mess then it is in main file
 
-#ifdef USE_CORE_STM32_ST
+#ifdef USE_STM32_ST_CORE
 HardwareTimer *PWM = new HardwareTimer(TIM1); // need to set it up here, before setup{}
 #endif
 
@@ -70,7 +70,7 @@ inline void InitHardware() {
   noInterrupts();
 
 
-#ifdef  USE_MAPLE_CORE
+#ifdef  USE_STM32duino_CORE
   pinMode(PB13, OUTPUT); // test pin 1
   pinMode(PB12, OUTPUT); // test pin 2
   pinMode(PB14, INPUT_PULLDOWN); // sense pin (fake PHI2 test)
@@ -102,7 +102,7 @@ inline void InitHardware() {
 
 
 
-#ifdef USE_CORE_STM32_ST
+#ifdef USE_STM32_ST_CORE
   pinMode(PA8, OUTPUT);
   pinMode(PB13, OUTPUT);
   pinMode(PB12, OUTPUT);
@@ -123,7 +123,6 @@ inline void InitHardware() {
   IRQtimer->attachInterrupt(irq_handler); // i could use a mega-super-ultra better name
   IRQtimer->resume();
 #endif
-
 
 
   // delay(500);

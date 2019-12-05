@@ -6,7 +6,8 @@
 // uncomment only one
 
 
-//#include "d:/My Documents/Documents/Arduino/STM32/HVSC71/MUSICIANS/G/Gray_Matt/Last_Ninja_2.h"
+//#include "d:/My Documents/Documents/Arduino/STM32/HVSC71/MUSICIANS/T/Tel_Jeroen/11_Heaven.h"
+
 
 
 //
@@ -22,12 +23,17 @@
 //#include"tunes/f401/Lemmings.h" //
 //#include"tunes/f401/house.h" // filter tester (Fanta really likes filters, unlike SID in my c64)
 //#include"tunes/f401/Nobby_the_Aardvark.h"
-#include"tunes/f401/Last_Ninja_2.h" // on f103, all tunes (0-12) are working
+//#include"tunes/f401/Last_Ninja_2.h" // on f103, all tunes (0-12) are working
 //#include"tunes/f401/Turrican_2-The_Final_Fight.h" // on f103, tunes 1,2,3,4,5,6,7 are working (0 and 8 don't)
 //#include"tunes/f401/R-Type.h"  // only tunes 0,1,2,3 are working on f103
 //#include"tunes/f401/Katakis.h"
 //#include"tunes/f401/Ghosts_n_Goblins_Arcade.h" // 34 tunes/sound effects. (on f103 plays only tune 0)
-//#include"tunes/f401/Ghouls_n_Ghosts.h" // relaxing
+#include"tunes/f401/Ghouls_n_Ghosts.h" // relaxing
+//#include"tunes/f401/Vendetta.h"  //
+// #include"tunes/f401/Albedo.h"  //
+//#include"tunes/f401/Rubicon.h"  //
+//#include"tunes/f401/great-giana-sisters-c64-SID-ID5914.h"  // founded on internet, not HVSC
+
 
 /////////////////////////////////////////////////////////////////////////////////////
 //f103 - sids less then 14500 bytes (and not using using memory outside it's memory space )
@@ -109,7 +115,7 @@
 //Tel_Jeroen
 //#include"tunes/f103/Gaplus.h" //
 
-//#include"tunes/f103/Mr_Marvellous.h"  
+//#include"tunes/f103/Mr_Marvellous.h"
 
 ///////////////////////////////////////////////////////////////////////////////         almoust sound like SID
 
@@ -140,10 +146,10 @@
 
 
 //f401 TODOTEST
-// #include"tunes/f103/Vendetta.h"  // 
-// #include"tunes/f103/Albedo.h"  // 
-//#include"tunes/f103/Rubicon.h"  // 
-//#include"tunes/f103/great-giana-sisters-c64-SID-ID5914.h"  // founded on internet, not HVSC
+
+
+
+
 
 
 ////////////////////////////////////////////////////////////////////////////// test sids

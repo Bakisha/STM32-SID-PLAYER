@@ -1027,7 +1027,7 @@ const uint8_t AND_mask [] {
 // for quick pin testing on PB13/PB12 (test pin for my signal analyzer)
 
 
-#ifdef USE_MAPLE_CORE
+#ifdef USE_STM32duino_CORE
 // Maple boards
 #define PB13_HIGH (GPIOB_BASE)->BSRR = BIT(13) // macro for fast pin ON
 #define PB13_LOW  (GPIOB_BASE)->BRR  = BIT(13) // macro for fast pin OFF
@@ -1035,7 +1035,7 @@ const uint8_t AND_mask [] {
 #define PB12_LOW  (GPIOB_BASE)->BRR  = BIT(12) // macro for fast pin OFF
 #endif
 
-#ifdef USE_CORE_STM32_ST
+#ifdef USE_STM32_ST_CORE
 // STM32 ST boards
 #define PB13_HIGH  GPIOB->BSRR = GPIOB->ODR        | 0x00002000 // macro for fast pin ON
 #define PB13_LOW   GPIOB->BSRR = (GPIOB->ODR<<16)  | 0x20000000 // macro for fast pin OFF
