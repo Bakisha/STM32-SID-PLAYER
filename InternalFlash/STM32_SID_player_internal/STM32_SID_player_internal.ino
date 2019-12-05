@@ -1,6 +1,6 @@
 
-#define USE_STM32_ST_CORE // uncomment if using this core. Set in preferences: https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json and search stm32 in board manager. Choose stm32 cores by ST Microelectronics. Select your CPU from tools menu)
-//#define USE_STM32duino_CORE // // uncomment if using this core. Set in preferences: http://dan.drown.org/stm32duino/package_STM32duino_index.json and search stm32F1 in board manager. Choose STM32F1xx core (NOTE: Only STM32F1 works)
+//#define USE_STM32_ST_CORE // uncomment if using this core. Set in preferences: https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json and search stm32 in board manager. Choose stm32 cores by ST Microelectronics. Select your CPU from tools menu)
+#define USE_STM32duino_CORE // // uncomment if using this core. Set in preferences: http://dan.drown.org/stm32duino/package_STM32duino_index.json and search stm32F1 in board manager. Choose STM32F1xx core (NOTE: Only STM32F1 works)
 
 // just make sure right board is selected  from board menu or you'll have compiling errors
 // it's recommended to set optimatization on FASTEST -O3 (from tool menu of Arduino IDE). (for some reasons LTO optimatization and Newlib Standard  doesn't work)
@@ -13,10 +13,10 @@
 // NOTE: for now, filters are linear in all frequencies range
 
 // Set the amount of RAM that can be available to emulator (leave at least 2000 bytes for locals) (depends of microcontroller's RAM and core used)
-//#define RAM_SIZE 0x3a00  // STM32F103C8 - STM32duino CORE with (USB)serial enabled
+#define RAM_SIZE 0x3a00  // STM32F103C8 - STM32duino CORE with (USB)serial enabled
 //#define RAM_SIZE 0x4400  // STM32F103C8 - STM32 ST CORE with (USB)serial disabled
 //#define RAM_SIZE 0xE800  // STM32F401CC - STM32 ST CORE with (USB)serial enabled
-#define RAM_SIZE 0xF400  // STM32F401CC - STM32 ST CORE with (USB)serial disabled
+//#define RAM_SIZE 0xF400  // STM32F401CC - STM32 ST CORE with (USB)serial disabled
 
 #define USE_CHANNEL_1 // uncomment, for testing (affect only volume, not the calculations)
 #define USE_CHANNEL_2 // (but it will have effect on filter output in case of multiple voices is filtered)
