@@ -31,7 +31,7 @@ const uint8_t period = 4;// period for timer1, for frequency and resolution of P
 // Best to set as multiplier, then lower it untill squeeks are gone
 // If set 1, it could be used even without external low-pass filter
 
-const uint8_t multiplier = 24 ; // (byte) set this for interrupt speed in uS (in general, how much slower then real SID). Don't set too small, irq might overlap (music will play  slower or won't play at  all)
+const uint8_t multiplier = 32 ; // (byte) set this for interrupt speed in uS (in general, how much slower then real SID). Don't set too small, irq might overlap (music will play  slower or won't play at  all)
 // needed for Timer2 (it also affect calculations in frequency multiplications per irq- it may affect tunes that uses Test-bit).
 // Ideally, this should be 1 (to cycle-exact emulate SID), but irq will need to respond and exit in next 500nS
 // Not with Bluepill, but for 2$ board, i'll make what i can
