@@ -8,7 +8,7 @@
 
 #define USE_FILTERS // uncomment for testing, irq is  faster in calculations 
 #define FILTER_FREQUENCY 12500 // maximum is 18000 for FILTER_SENSITIVITY 1 , lower it if increasing FILTER_SENSITIVITY. You'll know it if it's very high (it will totaly ruin volume)
-#define FILTER_SENSITIVITY  1// Lower is better. Best is 1 . It will consume irq time (<multiplier> must be higher), but FILTER_FREQUENCY can be set much higher. For value 8, maximum FILTER_FREQUENCY is 8000. For value 16, it's 4000. For 4 and 2, it's 12500
+#define FILTER_SENSITIVITY  2// Lower is better. Best is 1 . It will consume irq time (<multiplier> must be higher), but FILTER_FREQUENCY can be set much higher. For value 8, maximum FILTER_FREQUENCY is 8000. For value 16, it's 4000. For 4 and 2, it's 12500
 // play with these two values to determine what is "SID-like" sound
 // NOTE: for now, filters are linear in all frequencies range
 
