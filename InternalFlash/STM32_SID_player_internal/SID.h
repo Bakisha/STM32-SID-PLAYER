@@ -347,12 +347,6 @@ uint8_t ADSR_Release_3 = 0; // Release value (0-15)
 uint8_t ADSR_stage_3;  // 0-release finished , 1-Attack, 2-Decay, 3-Sustain, 4-Release
 bool hold_zero_3 = false;
 
-
-
-
-
-
-
 // gate bit
 
 uint8_t Gate_bit_1 = 1; // this is not actual gate signal. This a variable that is changed in main program, so irq can act upon it
