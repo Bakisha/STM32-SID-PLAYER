@@ -46,6 +46,5 @@ P1 = 10KOhm potentiometer
 
 If period is 1 , there is no need for R1 and C1.
 
-Make sure right board is selected in Arduino IDE, and uncomment line depending of what core from board manager is used.
 
 HAVE FUN :-)
