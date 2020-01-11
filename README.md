@@ -4,7 +4,7 @@ SID chip (6581 and 8580) and 6502 CPU emulator, with audio output on pin PA8, fo
 Demonstration video: 
 (internal flash memory player)  https://youtu.be/pvWagY7ppYg
 
-Much more details are versions subfolder.
+Much more details are in versions subfolder.
   
 HAVE FUN :-)
   
