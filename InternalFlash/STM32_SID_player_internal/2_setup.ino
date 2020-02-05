@@ -1,7 +1,5 @@
-//this could be in setup{}
-// but for now, i don't won't to make more mess then it is in main file
 
-#ifdef USE_STM32_ST_CORE
+#ifdef USE_STM32duino_CORE
 HardwareTimer *PWM = new HardwareTimer(TIM1); // need to set it up here, before setup{}
 #endif
 
@@ -70,7 +68,7 @@ inline void InitHardware() {
   noInterrupts();
 
 
-#ifdef  USE_STM32duino_CORE
+#ifdef  USE_ROGER_CORE
   pinMode(PB13, OUTPUT); // test pin 1
   pinMode(PB12, OUTPUT); // test pin 2
   pinMode(PB14, INPUT_PULLDOWN); // sense pin (fake PHI2 test)
@@ -93,7 +91,7 @@ inline void InitHardware() {
 
   // Timer2 for IRQ
   Timer2.setPrescaleFactor(1);
-  Timer2.setMode(TIMER_CH2, TIMER_OUTPUTCOMPARE);
+  Timer2.setMode(TIMER_CH2, TIMER_OUTPUT_COMPARE);
   Timer2.setPeriod(multiplier); // every xx microseconds interrupt run (total overhead us around 3.4uS +  code runtime (rest is time left for 6502 emulator )
   Timer2.setCompare(TIMER_CH2, 1);      // not needed to put any value, it's irq, it's triggering on overflow, not on compare
   Timer2.attachInterrupt(TIMER_CH2, irq_handler); // i could use better name
@@ -102,7 +100,7 @@ inline void InitHardware() {
 
 
 
-#ifdef USE_STM32_ST_CORE
+#ifdef USE_STM32duino_CORE
   pinMode(PA8, OUTPUT);
   pinMode(PB13, OUTPUT);
   pinMode(PB12, OUTPUT);

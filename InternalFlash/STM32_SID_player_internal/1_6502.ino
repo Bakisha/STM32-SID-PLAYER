@@ -2,7 +2,7 @@
 // http://rubbermallet.org/fake6502.c
 
 // 6502 emulation
-// far from perfect, it runs around at 1/3 speed of 1Mhz CPU, but it is enough to do the job (emulation is need in few raster lines only anyway)
+// far from perfect, it runs very slow, once interrupts are enabled, compared to 1Mhz CPU, but it is enough to do the job (emulation is needed only in few raster lines only anyway, around 500 instructions)
 // I only edited part with read and write so it can act uppon addresses
 
 
@@ -25,9 +25,9 @@ inline  uint8_t read6502(uint16_t address) {
         return_value = RAM[0x400 + address - SID_start] ;
       }
       else { // otherwise read from SID[] array
-#ifndef SDCARD // SC CARD is TODO, just making it compatible
+
         return_value =   SID_data[ 0x7e + address - SID_start]   ; // disable this if reading fromSD Card to RAM
-#endif
+
       }
     }
 
@@ -297,10 +297,6 @@ inline void reset6502() {
   cpustatus |= FLAG_CONSTANT;
 
 }
-
-
-
-
 
 
 
@@ -1530,4 +1526,7 @@ uint16_t getpc() {
 uint8_t getop() {
   return (opcode);
 }
+
+
+
 // end of Blue6502's voids

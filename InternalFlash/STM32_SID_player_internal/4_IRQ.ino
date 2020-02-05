@@ -3,22 +3,22 @@
 // IRQ time: see at the bottom of this file
 
 // main SID magic. Every voice is calculated
-#ifdef USE_STM32duino_CORE
+#ifdef USE_ROGER_CORE
 void irq_handler(void) { //
 #endif
 
-#ifdef USE_STM32_ST_CORE
+#ifdef USE_STM32duino_CORE
   void irq_handler(HardwareTimer*) {
 #endif
 
-    PB13_HIGH; // speed test pin // testpoint 1
+     // speed test pin // testpoint 1
     //digitalWrite(PB13, HIGH);
 
     // IRQ time can vary, better to set PWM on previous calculated volume, so at least it's changing at fixed time
 
 
 
-#ifdef USE_STM32duino_CORE
+#ifdef USE_ROGER_CORE
     // STM32duino boards
     // Timer1.pause(); // need to pause timer to be able to set value inside irq. Not needed when using ( Timer1.setCompare(TIMER_CH1, main_volume); )
     // TIMER1->CCR1 =  main_volume; //  faster version of Timer1.setCompare(TIMER_CH1, main_volume);
@@ -27,27 +27,34 @@ void irq_handler(void) { //
 #endif
 
 
-#ifdef USE_STM32_ST_CORE
+#ifdef USE_STM32duino_CORE
     // STM32 boards
-    // analogWrite(PA9, main_volume);
-    //PWM->setCaptureCompare(1, main_volume, TICK_COMPARE_FORMAT); // scaled to only 8 bit, i'm tired of fighting against timers and stm32 board core "logic". period*clock must be less then 256
+    // analogWrite(PA8, main_volume);
+    //PWM->setCaptureCompare(1, main_volume, TICK_COMPARE_FORMAT);
     TIM1->CCR1 =  main_volume; //  faster version of PWM->setCaptureCompare(1, main_volume, TICK_COMPARE_FORMAT);
 #endif
 
 
 
 
-    //PB13_LOW; // test pont
+    // // test pont
 
     /*
       skip_counter--; // 1Mhz to 985250HZ difference. Is it needed?
       if (skip_counter == 0) {
-      //  PB13_LOW;
+      //  
       skip_counter = skip_counter_max;
       return;
       }
     */
 
+    SID_Emulator();
+
+  }
+
+  //
+
+  inline void SID_Emulator () {
     VIC_irq = VIC_irq + multiplier; // counting microseconds
     if (VIC_irq >= SID_speed) { // Fake VIC-II irq request (every 20ms ), used in combination with JSR1003 variable from emulator. TODO: read from .sid file at what speed music is played, and change this value accordingly
       VIC_irq_request = 1; // volatile variable for main program
@@ -63,12 +70,11 @@ void irq_handler(void) { //
       else {
         SID_current_tune++;
       }
+      play_next_tune = true;
 
-      // Init6502; // for now do whole setup routine
-      reset6502();
-      // resetSID(); // fill SID[] with 0. Untill code is written, hopefully sid init (6502 code of it) routine will handle it
-      RAM[0x0304] = SID_current_tune - 1 ; // set song number (-1 offset since in sid header tunes are 1 indexed, in player it's 0 indexed)
     }
+
+    //real_tick_counter = real_tick_counter + multiplier; // counting uS for CPU speed measurement
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -214,7 +220,7 @@ void irq_handler(void) { //
 
     // end of voice 1
 
-    // PB13_HIGH;
+    // 
 
 
     // voice 2
@@ -385,7 +391,7 @@ void irq_handler(void) { //
           LFSR15_comparator_value_1 = ADSR_LFSR15[ADSR_Release_1];
           Gate_previous_1 = 0; // set to 0
 
-          //PB13_HIGH;
+          //
         }
 
 
@@ -406,7 +412,7 @@ void irq_handler(void) { //
 
 
 
-        //     PB13_LOW;
+        //     
         break;
 
     }
@@ -430,7 +436,7 @@ void irq_handler(void) { //
       // LFSR15_1 = 0;
       //  LFSR5_1 = LFSR5_1++;
 
-      //   PB13_HIGH;
+      //   
 
       // LFSR5_1 = LFSR5_1 + 1;
       LFSR5_1 = LFSR5_1 + Divided_LFSR15_1 ; // increase LFSR5 counter and check how many (LFSR5_1 == LFSR5_comparator_value_1) was skipped
@@ -491,7 +497,7 @@ void irq_handler(void) { //
                 ADSR_volume_1 = 0; // no negative numbers, clip it to zero
               }
 
-              if (ADSR_volume_1 <= (( ADSR_Sustain_1 << 4) + ADSR_Sustain_1)) {
+              if (ADSR_volume_1 <= (uint16_t( ADSR_Sustain_1 << 4) + ADSR_Sustain_1)) {
                 ADSR_volume_1 = (( ADSR_Sustain_1 << 4) + ADSR_Sustain_1); // no matter what number of exact volume is passed, set it to exact value
                 LFSR15_comparator_value_1 = ADSR_LFSR15[ADSR_Release_1   ]; // set counter comparator to match release value
                 // decay finished, time to sustain
@@ -500,7 +506,7 @@ void irq_handler(void) { //
               }
               break;
             case 3: // Sustain stage - checking for change in sustain value
-              if (ADSR_volume_1 > (( ADSR_Sustain_1 << 4) + ADSR_Sustain_1)) {
+              if (ADSR_volume_1 > (uint16_t( ADSR_Sustain_1 << 4) + ADSR_Sustain_1)) {
 
                 // new sustain value is smaller then old,  get back to decay.
 
@@ -532,7 +538,7 @@ void irq_handler(void) { //
         } // not hold zero
       }  // LFSR5_comparator_value check
 
-      //   PB13_LOW;
+      //   
 
 
     }  // LFSR15_comparator_value check
@@ -607,7 +613,7 @@ void irq_handler(void) { //
       // LFSR15_2 = 0;
       //  LFSR5_2 = LFSR5_2++;
 
-      //   PB13_HIGH;
+      //   
 
       // LFSR5_2 = LFSR5_2 + 1;
       LFSR5_2 = LFSR5_2 + Divided_LFSR15_2 ; // increase LFSR5 counter and
@@ -692,7 +698,7 @@ void irq_handler(void) { //
         } // not hold zero
       }  // LFSR5_comparator_value check
 
-      //   PB13_LOW;
+      //   
 
 
     }  // LFSR15_comparator_value check
@@ -768,7 +774,7 @@ void irq_handler(void) { //
       // LFSR15_3 = 0;
       //  LFSR5_3 = LFSR5_3++;
 
-      //   PB13_HIGH;
+      //   
 
       // LFSR5_3 = LFSR5_3 + 1;
       LFSR5_3 = LFSR5_3 + Divided_LFSR15_3 ; // increase LFSR5 counter and check how many (LFSR5_3 >= LFSR5_comparator_value_3) was skipped
@@ -855,7 +861,7 @@ void irq_handler(void) { //
         } // not hold zero
       }  // LFSR5_comparator_value check
 
-      //   PB13_LOW;
+      //   
 
 
     }  // LFSR15_comparator_value check
@@ -865,7 +871,7 @@ void irq_handler(void) { //
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    //  PB13_HIGH;
+    //  
 
 
 
@@ -1015,7 +1021,7 @@ void irq_handler(void) { //
 
 
 #ifdef USE_FILTERS
-    //  PB13_LOW;
+    //  
 
     Volume_filter_input = int32_t(Volume_filter_input) >> 7; // lower it to 13bit
 
@@ -1063,7 +1069,7 @@ void irq_handler(void) { //
     if (FILTER_BP) {
       Volume_filter_output = Volume_filter_output + Vbp;
     }
-    //  PB13_HIGH;
+    //  
 
     Volume_filter_output = (int32_t(Volume_filter_output) << 7); // back to 20 bit
 
@@ -1115,7 +1121,7 @@ void irq_handler(void) { //
     //
 
     // btw, lot of "i hope" in this code... oh, well... :-)
-    // PB13_LOW; // test pin low. Let's see how much time irq is long (and it's without overhead)
+    //  // test pin low. Let's see how much time irq is long (and it's without overhead)
     // testpoint 13 // testpoint 14
 
 
@@ -1200,13 +1206,13 @@ void irq_handler(void) { //
 
       }
       else {
-        PB12_HIGH;
+       
         exec6502();
       }
       PB12_LOW;
     */
 
-    PB13_LOW;
+    
     // digitalWrite(PB13, LOW);
 
     STAD4XX = 0; // let main program know that his request has been served
@@ -1216,7 +1222,7 @@ void irq_handler(void) { //
 
   // copy code bellow for every instruction to be executed in irq
   /*
-    PB12_HIGH; //
+    //
     if (JSR1003 == 1) { // JSR1003 check
       if (VIC_irq_request == 1) {
         JSR1003 = 0;
@@ -1233,31 +1239,3 @@ void irq_handler(void) { //
       PB12_LOW;
     }
   */
-
-
-  // IRQ times measured at different setting:
-
-  /////////////////////////////////////////////////////////////////////////////
-  // STM32F013C8T6 (some of them are with 128k or flash)
-  //
-  ///////////////////////////////////////
-  //FILTER_FREQUENCY: 8000
-  //FILTER_SENSITIVITY: 8
-  //USE_FILTERS: YES
-  //
-  //IRQ Time: 18uS (+/- 2uS)
-  //6502 instruction time: 4-9uS
-  // Recommended multiplier: 32 (uS)
-  //
-  ///////////////////////////////////////
-  //FILTER_FREQUENCY: 12500
-  //FILTER_SENSITIVITY: 2
-  //USE_FILTERS: YES
-  //
-  //IRQ Time: 24uS (+/- 2uS)
-  //6502 instruction time: 4-9uS
-  // Recommended multiplier: 32 (uS)
-  //
-  ///////////////////////////////////////
-  //
-  //

@@ -1,10 +1,24 @@
 #ifndef _sid
 #define _sid
+uint8_t period = 4;//                        period for timer1, for frequency and resolution of PWM in uS
+//                                           Automatic config set this as 4, if calculated multiplier is greater then 12 (uS), otherwise, is same as multiplier.
+//                                           value of 1 represent number of cpu cycles in 1 uS. (cpu_speed * period) is PWM resolution .
+
+uint8_t multiplier  ;//                   
+//                                           (byte) Interrupt speed in uS (in general, how much slower then real SID). Automatic config will search for value that has SID emulator run under 13mS per frame.
+//                                           needed for Timer2 (it also affect calculations in frequency multiplications per irq- it may affect tunes that uses Test-bit).
+//                                           Ideally, this should be 1 (to cycle-exact emulate SID), but irq will need to respond and exit in next 500nS
+//                                           Not with Bluepill, but for 2$ board, i'll make what i can
+//                                           Minimum is 1 (as a number, if set, iit wiiiiiiil beeeeeee sloooooooooooooow) (but it is fun to see how bluepill cycle emulate SID :-) )
+//                                           Maximum is 248 , but that will greatly lower quality of high frequency sounds (Pulse voices might not even work, noise will be on lower frequencies, etc...)
+//                                           You could say that SAMPLE_RATE=1000000/multiplier
+//                                           Sound is not buffered, volume is calculated every <multiplier> uS
+//                                           
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 const uint8_t magic_number = F_CPU / 1000000 ; // PWM resolution - number of cycles in 1 uS (PWM resolution = period * magic_number) // keep as same as speed of microcontroller, in Mhz
-// at 72MHz there is 72 clock "ticks" in 1uS that drives counter of Timer1. It works with 128MHZ bluepill overclocked (value is 128 then... DUH). It also works underclocked at 48MHz. (Choose speed and set value before compiling)
+// at 72MHz there is 72 clock "ticks" in 1uS that drives counter of Timer1. It works with 128MHZ bluepill overclocked. It also works underclocked at 48MHz. 
 // STM32duino boards have this as CYCLES_PER_MICROSECOND
 // STM32 boards have this as (F_CPU / 1000000)
 // TODO: It's a 8bit number, so maximum clock is 255. TODO: See if it brake stuff if it's 16bit number.
@@ -20,11 +34,12 @@ uint8_t SID_default_tune = SID_data[17] + (SID_data[16] * 256); // default song 
 uint8_t SID_number_of_tunes = SID_data[15] + (SID_data[14] * 256); // number of tunes in sid
 uint8_t SID_current_tune = SID_default_tune;
 
-uint16_t SID_speed = 20000; // (in uS) see how to calculate this number from sid header
+uint16_t SID_speed ; // it's set in setup.ino // (in uS) // see how to calculate this number from sid header
 
 uint32_t tune_play_counter; // uS counter
 uint32_t tune_play_next = 1000000 * TUNE_PLAY_TIME; // play new tune every x seconds  (this is the number in uS) (maximum 32bit number is around 71minutes)
 volatile bool next_tune = false;
+volatile bool play_next_tune = 0;
 
 uint8_t skip_counter;
 uint8_t skip_counter_max = 197; //every 197th jumps into irq will be skiped, to emulate 985000Hz clock (not 1MHz )
@@ -1018,8 +1033,11 @@ const uint8_t AND_mask [] {
 
 
 
-// for quick pin testing on PB13/PB12 (test pin for my signal analyzer)
+// pin testing disabled. Code measure it's own execution time
 
+/*
+
+// for quick pin testing on PB13/PB12 (test pin for my signal analyzer)
 
 #ifdef USE_STM32duino_CORE
 // Maple boards
@@ -1042,3 +1060,4 @@ const uint8_t AND_mask [] {
 //#define PB13_LOW digitalWrite(PB13,LOW);
 //#define PB12_HIGH digitalWrite(PB12,HIGH);
 //#define PB12_LOW digitalWrite(PB12,LOW);
+*/

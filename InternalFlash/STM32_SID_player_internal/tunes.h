@@ -3,14 +3,6 @@
 // every file is converted to array that is stored in flash memory.
 // converter used is bin2c that can be found at https://sourceforge.net/projects/bin2c/files/
 
-// uncomment only one
-
-
-#include "d:/My Documents/Documents/Arduino/STM32/HVSC71/MUSICIANS/T/Tel_Jeroen/11_Heaven.h"
-
-
-
-//
 
 ///////////////////////////////////////////////  S I D     F I L E S /////////////////////////////////////////////////////////////
 
@@ -30,7 +22,7 @@
 //#include"tunes/f401/Ghosts_n_Goblins_Arcade.h" // 34 tunes/sound effects. (on f103 plays only tune 0)
 //#include"tunes/f401/Ghouls_n_Ghosts.h" // relaxing
 //#include"tunes/f401/Vendetta.h"  //
-// #include"tunes/f401/Albedo.h"  //
+//#include"tunes/f401/Albedo.h"  //
 //#include"tunes/f401/Rubicon.h"  //
 //#include"tunes/f401/great-giana-sisters-c64-SID-ID5914.h"  // founded on internet, not HVSC
 
@@ -134,7 +126,7 @@
 
 //#include"tunes/f103/Mexico.h"  // it's 5xspeed tune. barelly keeping up, even overclocked
 //#include"tunes/f103/Defender_of_the_Crown.h" // 8 x speed player . Multiplier 64 on 72Mhz, 24 on 128Mhz to play normally
-
+//#include"tunes/f103/Broken_Vinyl_for_11.h" // 4xspeed
 
 ///////////////////////////////////////////////////////////////////////////////// doesn't work
 
