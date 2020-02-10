@@ -9,11 +9,12 @@ uint8_t multiplier  ;//
 //                                           needed for Timer2 (it also affect calculations in frequency multiplications per irq- it may affect tunes that uses Test-bit).
 //                                           Ideally, this should be 1 (to cycle-exact emulate SID), but irq will need to respond and exit in next 500nS
 //                                           Not with Bluepill, but for 2$ board, i'll make what i can
-//                                           Minimum is 1 (as a number, if set, iit wiiiiiiil beeeeeee sloooooooooooooow) (but it is fun to see how bluepill cycle emulate SID :-) )
+//                                           Minimum is 1 (as a number, if set manualy , wiiiiiiil beeeeeee sloooooooooooooow) (but it is fun to see how bluepill cycle emulate SID :-) )
 //                                           Maximum is 248 , but that will greatly lower quality of high frequency sounds (Pulse voices might not even work, noise will be on lower frequencies, etc...)
 //                                           You could say that SAMPLE_RATE=1000000/multiplier
 //                                           Sound is not buffered, volume is calculated every <multiplier> uS
-//                                           
+//
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -24,22 +25,38 @@ const uint8_t magic_number = F_CPU / 1000000 ; // PWM resolution - number of cyc
 // TODO: It's a 8bit number, so maximum clock is 255. TODO: See if it brake stuff if it's 16bit number.
 
 
-uint16_t SID_start = SID_data[0x7c] + (SID_data[0x7d] * 256); // get start address from .sid file
-uint16_t SID_end = SID_start + SID_data_size - 0x7e ; // end address of music routine , not included "busy blocks", aka, ram needed after end of actual sid file. If sid is longer then available RAM, everything above available RAM will be read-only (from SID_data[] array)
+uint16_t MagicID = 0;
+uint16_t VERSION = 0;
+bool RAM_OVERFLOW = 0;
 
-uint16_t SID_play = SID_data[13] + (SID_data[12] * 256); // sid play address
-uint16_t SID_init = SID_data[11] + (SID_data[10] * 256); // sid init address
+bool autoconfigFinished = false;
 
-uint8_t SID_default_tune = SID_data[17] + (SID_data[16] * 256); // default song to be played first
-uint8_t SID_number_of_tunes = SID_data[15] + (SID_data[14] * 256); // number of tunes in sid
-uint8_t SID_current_tune = SID_default_tune;
+uint16_t LOAD_ADDRESS = 0;
+volatile bool next_tune = false;
 
-uint16_t SID_speed ; // it's set in setup.ino // (in uS) // see how to calculate this number from sid header
+
+
+
+uint16_t SID_load_start = 0; //SID_data[0x7c] + (SID_data[0x7d] * 256); // get start address from .sid file
+uint16_t SID_load_end = 0; //SID_start + SID_data_size - 0x7e ; // end address of music routine , not included "busy blocks", aka, ram needed after end of actual sid file. If sid is longer then available RAM, everything above available RAM will be read-only (from SID_data[] array)
+
+uint16_t SID_play = 0;//SID_data[13] + (SID_data[12] * 256); // sid play address
+uint16_t SID_init = 0;//SID_data[11] + (SID_data[10] * 256); // sid init address
+
+uint8_t SID_default_tune = 0;//SID_data[17] + (SID_data[16] * 256); // default song to be played first
+uint8_t SID_number_of_tunes = 0;//SID_data[15] + (SID_data[14] * 256); // number of tunes in sid
+uint8_t SID_current_tune = 0;//SID_default_tune;
+
+uint16_t SID_speed = 0;//20000; // value set in 2_setup.ino(in uS) see how to calculate this number from sid header
 
 uint32_t tune_play_counter; // uS counter
 uint32_t tune_play_next = 1000000 * TUNE_PLAY_TIME; // play new tune every x seconds  (this is the number in uS) (maximum 32bit number is around 71minutes)
-volatile bool next_tune = false;
+
+uint32_t VIC_irq = 0;
+volatile  uint8_t  VIC_irq_request = 0;
 volatile bool play_next_tune = 0;
+volatile  uint8_t JSR1003 = 0;
+volatile  uint8_t STAD4XX = 0;
 
 uint8_t skip_counter;
 uint8_t skip_counter_max = 197; //every 197th jumps into irq will be skiped, to emulate 985000Hz clock (not 1MHz )
@@ -364,7 +381,7 @@ bool hold_zero_3 = false;
 
 // gate bit
 
-uint8_t Gate_bit_1 = 1; // this is not actual gate signal. This a variable that is changed in main program, so irq can act upon it
+uint8_t Gate_bit_1 = 1; //
 uint8_t Gate_bit_2 = 1;
 uint8_t Gate_bit_3 = 1;
 /*
@@ -475,11 +492,7 @@ const uint8_t ADSR_Volume2LFSR5 [] = { // clock divider that drive ADSR_Volume c
 };
 
 
-uint32_t VIC_irq = 0;
-volatile  uint8_t  VIC_irq_request = 0;
 
-volatile  uint8_t JSR1003 = 0;
-volatile  uint8_t STAD4XX = 0;
 
 
 
@@ -1030,34 +1043,3 @@ const uint8_t AND_mask [] {
 };
 
 #endif
-
-
-
-// pin testing disabled. Code measure it's own execution time
-
-/*
-
-// for quick pin testing on PB13/PB12 (test pin for my signal analyzer)
-
-#ifdef USE_STM32duino_CORE
-// Maple boards
-#define PB13_HIGH (GPIOB_BASE)->BSRR = BIT(13) // macro for fast pin ON
-#define PB13_LOW  (GPIOB_BASE)->BRR  = BIT(13) // macro for fast pin OFF
-#define PB12_HIGH (GPIOB_BASE)->BSRR = BIT(12) // macro for fast pin ON
-#define PB12_LOW  (GPIOB_BASE)->BRR  = BIT(12) // macro for fast pin OFF
-#endif
-
-#ifdef USE_STM32_ST_CORE
-// STM32 ST boards
-#define PB13_HIGH  GPIOB->BSRR = GPIOB->ODR        | 0x00002000 // macro for fast pin ON
-#define PB13_LOW   GPIOB->BSRR = (GPIOB->ODR<<16)  | 0x20000000 // macro for fast pin OFF
-#define PB12_HIGH  GPIOB->BSRR = GPIOB->ODR        | 0x00001000// macro for fast pin ON
-#define PB12_LOW   GPIOB->BSRR = (GPIOB->ODR<<16)  | 0x10000000 // macro for fast pin OFF
-#endif
-
-// normal
-//#define PB13_HIGH digitalWrite(PB13,HIGH);
-//#define PB13_LOW digitalWrite(PB13,LOW);
-//#define PB12_HIGH digitalWrite(PB12,HIGH);
-//#define PB12_LOW digitalWrite(PB12,LOW);
-*/

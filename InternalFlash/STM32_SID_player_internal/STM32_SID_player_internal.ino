@@ -1,11 +1,10 @@
-// Choose your board and upload method from menu
+// Choose your board and upload method from menu 
 // Choose available RAM for emulator (depending of microcontroller) (currently set for BluePill - STM32F103C8, any core )
-// it's strongly recommended to set optimatization on FASTEST -O3 (from tool menu of Arduino IDE). 
-
+// it's strongly recommended to set optimatization on FASTEST -O3 (from tool menu of Arduino IDE).
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //
-//           emulator settings 
+//           emulator settings
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -19,27 +18,30 @@ uint8_t DEFAULT_SONG = 0;                 // 0 is automatic, from sid header, an
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-#include"tunes/f103/CJs_Elephant_Antics.h"
+#include"tunes/f103/Supremacy.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //
-//          optional hardware settings 
+//          optional hardware settings
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-#define USE_SERIAL                  //       for debugging info on Serial , uncomment if it's needed
-#define USE_SERIAL1                 //       for debugging info on Serial1, uncomment if it's needed
+#define USE_SERIAL                                 //       for debugging info on Serial , uncomment if it's needed
+#define USE_SERIAL1                                //       for debugging info on Serial1, uncomment if it's needed
 
+#define BUTTON_1        PB0                        // can be any pin , it works without button, it will skip to next tune when timed out
+
+#define AUDIO_OUT       PA8                        // can't be changed, this is just reminder
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //
-//          optional emulator settings 
+//          optional emulator settings
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-#define USE_FILTERS                        // uncomment for testing, irq is  faster in calculations 
+#define USE_FILTERS                        // uncomment for testing, irq is  faster in calculations (so multiplier will be smaller, and samplerate will be higher)
 
-#define FILTER_SENSITIVITY  4             // Lower is better. Best is 1.  It will consume irq time , but FILTER_FREQUENCY can be set much higher
+#define FILTER_SENSITIVITY  4              // Lower is better. Best is 1.  It will consume irq time , but FILTER_FREQUENCY can be set much higher
 #define FILTER_FREQUENCY 12500             // You'll know it if it's very high (it will totaly ruin sound)
 
 //                                            Play with these two values to determine what is "SID-like" sound

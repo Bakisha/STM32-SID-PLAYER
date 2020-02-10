@@ -18,8 +18,9 @@ uint16_t return_value = 0x00;
 /* Contents of file MyROM.bin */
 const int MyROM_size = 256;
 const uint8_t MyROM[256] = {
-  //  code and opcodes generated in Commodore 128's emulator, in Monitor (old habits die hard)
-  0xEA,               //  SEI
+    //  code and opcodes generated in Commodore 128's emulator, in Monitor (old habits die hard)
+
+  0xEA,               //  NOP
   0xEA,               //  NOP
   0xEA,               //  NOP
   0xA9, 0x00,         //  LDA#00
@@ -28,21 +29,11 @@ const uint8_t MyROM[256] = {
   0xEA,               //  NOP
   0xEA,               //  NOP
   0xEA,               //  NOP
-  0xEA, 0xEA,
-  // 0xA9, 0x00,         //  LDA#00
-  0x20, 0x03, 0x10,   //  JSR $1003
-  0x18,               //   // CLC
-  0x90, 0xF8,               //  // BCC 030C
-  // 0x02,               //  NOP // JMP 0x030d
-
-  //0xA2, 0x00,         //  LDX#00
-  //0xA0, 0x00,         //  LDY#00
-  //0xC8,               //  INY
-  //0xC0, 0x00,         //  CPY #00
-  //0xD0, 0xFB,         //  BNE $8F18
-  //0xE8,               //  INX
-  //0xE0, 0xFF,         //  CPX #$FF
-  //0xD0, 0xF4,         //  BNE 8F16
+  0xEA,               //  NOP
+  0xEA,               //  NOP
+  0x20, 0x03, 0x10,   //  JSR $1003 ($030c)
+  0x18,               // CLC
+  0x90, 0xF8,         // BCC 030C
   0xEA,               //  NOP
   0xEA,               //  NOP
   0xEA,               //  NOP
@@ -57,8 +48,6 @@ const uint8_t MyROM[256] = {
   0xEA,               //  NOP
   0xEA,               //  NOP
   0xEA,               //  NOP
-
-
 
 
   0x4C, 0x0E, 0xFF,   //  JMP $ff0e
@@ -81,7 +70,6 @@ const uint8_t MyROM[256] = {
   0x00, 0x03,   // Reset Vector (This will jump to program at 0x0300 )
   0x00, 0x03    // IRQ/BRK Vector
 };
-
 
 //6502 defines
 #define UNDOCUMENTED //when this is defined, undocumented opcodes are handled.

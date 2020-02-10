@@ -8,7 +8,7 @@
 
 inline  uint8_t read6502(uint16_t address) {
 
-  if (address == SID_play) { // is sid-play address?
+  if (address == 0x030c) { // is sid-play address?
     JSR1003 = 1; // if it's loading <20-03-10> (example: JSR $1003) value from sid_play routine, it is time for fake VIC-II irq signal
   }
   if ((address >= 0xD400) && (address < 0xD420)) {
@@ -17,16 +17,16 @@ inline  uint8_t read6502(uint16_t address) {
     return_value = SID[address - 0xD400]; // TODO: make it unreadable //   SID
   }
 
-  if ( (address >=  SID_start)  & (address <  SID_end ) ) { // sid player area
+  if ( (address >=  SID_load_start)  & (address <  SID_load_end ) ) { // sid player area
 
     if ( LOW_RAM == true ) { // hack to relocate addresses from SID_start to 0x400
 
-      if ( (0x400 + address - SID_start) < (RAM_SIZE )) { // read from RAM if it's in available RAM,
-        return_value = RAM[0x400 + address - SID_start] ;
+      if ( (0x400 + address - SID_load_start) < (RAM_SIZE )) { // read from RAM if it's in available RAM,
+        return_value = RAM[0x400 + address - SID_load_start] ;
       }
       else { // otherwise read from SID[] array
 
-        return_value =   SID_data[ 0x7e + address - SID_start]   ; // disable this if reading fromSD Card to RAM
+        return_value =   SID_data[ 0x7e + address - SID_load_start]   ; // disable this if reading fromSD Card to RAM
 
       }
     }
@@ -55,7 +55,6 @@ inline void write6502(uint16_t address, uint8_t value) {
     access_adress = (address - 0xD400);
     SID[ (access_adress)] = value; //  SID
 
-    // RAM[(RAM_SIZE - 0x20) + (access_adress)] = value; //  SID
 
     // disable if IRQ is transfering SID[] variable
     switch (access_adress) {
@@ -84,7 +83,7 @@ inline void write6502(uint16_t address, uint8_t value) {
         Gate_bit_1 = SID[4] & 1;   //
 
         //waveform_switch_1 = (noise_bit_voice_1 << 3) | (pulse_bit_voice_1 << 2) | (sawtooth_bit_voice_1 << 1) | (triangle_bit_voice_1); // for barebone version
-        waveform_switch_1 =  ( SID[4] >> 4);
+        //waveform_switch_1 =  ( SID[4] >> 4); // it's in IRQ
 
         break;
       case 5:
@@ -120,7 +119,7 @@ inline void write6502(uint16_t address, uint8_t value) {
         Gate_bit_2 = SID[11] & 1;   //
 
         //waveform_switch_2 = (noise_bit_voice_2 << 3) | (pulse_bit_voice_2 << 2) | (sawtooth_bit_voice_2 << 1) | (triangle_bit_voice_2);
-        waveform_switch_2 = 0x0f & ( SID[11] >> 4);
+        //waveform_switch_2 = 0x0f & ( SID[11] >> 4);
 
         break;
       case 12:
@@ -157,7 +156,7 @@ inline void write6502(uint16_t address, uint8_t value) {
         Gate_bit_3 = SID[18] & 1;   //
 
         //waveform_switch_3 = (noise_bit_voice_3 << 3) | (pulse_bit_voice_3 << 2) | (sawtooth_bit_voice_3 << 1) | (triangle_bit_voice_3); // for barebone version
-        waveform_switch_3 = 0x0f & ( SID[18] >> 4);
+        //waveform_switch_3 = 0x0f & ( SID[18] >> 4);
         break;
       case 19:
         //STAD4XX = 1; // SID write signal for IRQ
@@ -263,9 +262,9 @@ inline void write6502(uint16_t address, uint8_t value) {
 
 
   if ( LOW_RAM == true ) {
-    if ( (address >=  SID_start) ) { //   & (address <  SID_end ) ) {
-      if ( 0x400 + address - SID_start < (RAM_SIZE )) { // write to memory only if it fits into RAM, rest is ignored.
-        RAM[0x400 + address - SID_start] = value; // sid data memory space
+    if ( (address >=  SID_load_start) ) { //   & (address <  SID_load_end ) ) {
+      if ( 0x400 + address - SID_load_start < (RAM_SIZE )) { // write to memory only if it fits into RAM, rest is ignored.
+        RAM[0x400 + address - SID_load_start] = value; // sid data memory space
       }
     }
     if (address < 0x400) RAM[address] = value; // zero page, stack, player and free ram
@@ -893,15 +892,6 @@ inline void exec6502() {
 
 
   opcode = read6502(pc++);
-  // Serial.print("opcode is ");
-  // Serial.print(opcode, HEX);
-  // Serial.print("    adress is ");
-  // Serial.print(pc, HEX);
-
-  // Serial.println();
-
-
-
 
   cpustatus |= FLAG_CONSTANT;
 
@@ -1526,7 +1516,4 @@ uint16_t getpc() {
 uint8_t getop() {
   return (opcode);
 }
-
-
-
 // end of Blue6502's voids

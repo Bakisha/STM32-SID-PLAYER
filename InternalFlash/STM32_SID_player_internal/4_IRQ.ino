@@ -1,8 +1,3 @@
-
-
-// IRQ time: see at the bottom of this file
-
-// main SID magic. Every voice is calculated
 #ifdef USE_ROGER_CORE
 void irq_handler(void) { //
 #endif
@@ -11,7 +6,7 @@ void irq_handler(void) { //
   void irq_handler(HardwareTimer*) {
 #endif
 
-     // speed test pin // testpoint 1
+    // speed test pin // testpoint 1
     //digitalWrite(PB13, HIGH);
 
     // IRQ time can vary, better to set PWM on previous calculated volume, so at least it's changing at fixed time
@@ -35,26 +30,14 @@ void irq_handler(void) { //
 #endif
 
 
-
-
-    // // test pont
-
     /*
       skip_counter--; // 1Mhz to 985250HZ difference. Is it needed?
       if (skip_counter == 0) {
-      //  
+      //
       skip_counter = skip_counter_max;
       return;
       }
     */
-
-    SID_Emulator();
-
-  }
-
-  //
-
-  inline void SID_Emulator () {
     VIC_irq = VIC_irq + multiplier; // counting microseconds
     if (VIC_irq >= SID_speed) { // Fake VIC-II irq request (every 20ms ), used in combination with JSR1003 variable from emulator. TODO: read from .sid file at what speed music is played, and change this value accordingly
       VIC_irq_request = 1; // volatile variable for main program
@@ -74,7 +57,15 @@ void irq_handler(void) { //
 
     }
 
-    //real_tick_counter = real_tick_counter + multiplier; // counting uS for CPU speed measurement
+    SID_emulator();
+
+  }
+
+  //
+
+  inline void SID_emulator () {
+
+
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -147,7 +138,9 @@ void irq_handler(void) { //
     if ( (triangle_bit_voice_2) & (ring_bit_voice_2) ) OSC_MSB_2 = OSC_MSB_2 ^ OSC_MSB_1; // TODO: see if it's exact on high frequencies
     if ( (triangle_bit_voice_3) & (ring_bit_voice_3) ) OSC_MSB_3 = OSC_MSB_3 ^ OSC_MSB_2; // TODO: see what's faster, here or in triangle voice check
 
-
+    waveform_switch_1 = (noise_bit_voice_1 << 3) | (pulse_bit_voice_1 << 2) | (sawtooth_bit_voice_1 << 1) | (triangle_bit_voice_1);
+    waveform_switch_2 = (noise_bit_voice_2 << 3) | (pulse_bit_voice_2 << 2) | (sawtooth_bit_voice_2 << 1) | (triangle_bit_voice_2);
+    waveform_switch_3 = (noise_bit_voice_3 << 3) | (pulse_bit_voice_3 << 2) | (sawtooth_bit_voice_3 << 1) | (triangle_bit_voice_3);
 
     temp11 = (OSC_1 >> 12); // upper 12 bit of OSC_1 calculate once now
 
@@ -220,7 +213,7 @@ void irq_handler(void) { //
 
     // end of voice 1
 
-    // 
+    //
 
 
     // voice 2
@@ -412,7 +405,7 @@ void irq_handler(void) { //
 
 
 
-        //     
+        //
         break;
 
     }
@@ -436,7 +429,7 @@ void irq_handler(void) { //
       // LFSR15_1 = 0;
       //  LFSR5_1 = LFSR5_1++;
 
-      //   
+      //
 
       // LFSR5_1 = LFSR5_1 + 1;
       LFSR5_1 = LFSR5_1 + Divided_LFSR15_1 ; // increase LFSR5 counter and check how many (LFSR5_1 == LFSR5_comparator_value_1) was skipped
@@ -538,7 +531,7 @@ void irq_handler(void) { //
         } // not hold zero
       }  // LFSR5_comparator_value check
 
-      //   
+      //
 
 
     }  // LFSR15_comparator_value check
@@ -613,7 +606,7 @@ void irq_handler(void) { //
       // LFSR15_2 = 0;
       //  LFSR5_2 = LFSR5_2++;
 
-      //   
+      //
 
       // LFSR5_2 = LFSR5_2 + 1;
       LFSR5_2 = LFSR5_2 + Divided_LFSR15_2 ; // increase LFSR5 counter and
@@ -698,7 +691,7 @@ void irq_handler(void) { //
         } // not hold zero
       }  // LFSR5_comparator_value check
 
-      //   
+      //
 
 
     }  // LFSR15_comparator_value check
@@ -774,7 +767,7 @@ void irq_handler(void) { //
       // LFSR15_3 = 0;
       //  LFSR5_3 = LFSR5_3++;
 
-      //   
+      //
 
       // LFSR5_3 = LFSR5_3 + 1;
       LFSR5_3 = LFSR5_3 + Divided_LFSR15_3 ; // increase LFSR5 counter and check how many (LFSR5_3 >= LFSR5_comparator_value_3) was skipped
@@ -861,7 +854,7 @@ void irq_handler(void) { //
         } // not hold zero
       }  // LFSR5_comparator_value check
 
-      //   
+      //
 
 
     }  // LFSR15_comparator_value check
@@ -871,7 +864,7 @@ void irq_handler(void) { //
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    //  
+    //
 
 
 
@@ -1021,7 +1014,7 @@ void irq_handler(void) { //
 
 
 #ifdef USE_FILTERS
-    //  
+    //
 
     Volume_filter_input = int32_t(Volume_filter_input) >> 7; // lower it to 13bit
 
@@ -1069,7 +1062,7 @@ void irq_handler(void) { //
     if (FILTER_BP) {
       Volume_filter_output = Volume_filter_output + Vbp;
     }
-    //  
+    //
 
     Volume_filter_output = (int32_t(Volume_filter_output) << 7); // back to 20 bit
 
@@ -1206,13 +1199,13 @@ void irq_handler(void) { //
 
       }
       else {
-       
+
         exec6502();
       }
       PB12_LOW;
     */
 
-    
+
     // digitalWrite(PB13, LOW);
 
     STAD4XX = 0; // let main program know that his request has been served
