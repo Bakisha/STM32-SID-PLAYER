@@ -34,8 +34,8 @@ bool RAM_OVERFLOW = 0;
 
 bool autoconfigFinished = false;
 
-char SID_filename[128] ; // reserve 256 bytes for file name
-char SID_DIR_name [128] ; // reserve 256 bytes for directory path name
+char SID_filename[256] ; // reserve 256 bytes for file name
+char SID_DIR_name [256] ; // reserve 256 bytes for directory path name
 char SID_path_filename [256] ; // reserve 256 bytes for full path of file
 
 const char *sid_extension = "sid";
@@ -387,6 +387,12 @@ uint8_t ADSR_Sustain_3 = 0; // Sustain value (0-15)
 uint8_t ADSR_Release_3 = 0; // Release value (0-15)
 uint8_t ADSR_stage_3;  // 0-release finished , 1-Attack, 2-Decay, 3-Sustain, 4-Release
 bool hold_zero_3 = false;
+
+
+
+
+
+
 
 // gate bit
 

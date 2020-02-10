@@ -1,8 +1,11 @@
-#ifdef USE_STM32_ST_CORE
+#ifdef USE_STM32duino_CORE
 HardwareTimer *PWM = new HardwareTimer(TIM1); // need to set it up here, before setup{}
 #endif
 
-inline void InitHardware() {
+
+
+
+inline void InitHardware() { // setup pins and IRQ
 
   // init irq
 
@@ -10,13 +13,9 @@ inline void InitHardware() {
 
   pinMode(BUTTON_1, INPUT_PULLUP);
 
-#ifdef  USE_STM32duino_CORE
-  pinMode(PB13, OUTPUT); // test pin 1
-  pinMode(PB12, OUTPUT); // test pin 2
-  pinMode (PA8, PWM); //   audio output pin
+#ifdef  USE_ROGER_CORE
 
-  digitalWrite(PB12, HIGH);
-  digitalWrite(PB13, HIGH);
+  pinMode (PA8, PWM); //   audio output pin
 
   Timer1.setPeriod(period);
 
@@ -27,10 +26,8 @@ inline void InitHardware() {
   Timer2.attachInterrupt(TIMER_CH2, irq_handler);
 #endif
 
-#ifdef USE_STM32_ST_CORE
+#ifdef USE_STM32duino_CORE
   pinMode(PA8, OUTPUT);
-  pinMode(PB13, OUTPUT);
-  pinMode(PB12, OUTPUT);
 
   PWM->pause();
   PWM->setMode(1, TIMER_OUTPUT_COMPARE_PWM1, PA8);
@@ -83,7 +80,7 @@ inline void Compatibility_check() {
   SID_number_of_tunes =  RAM[0x0f + 0x0380] + ( RAM[0x0e + 0x0380] * 256);
   SID_default_tune =  RAM[0x11 + 0x0380] + ( RAM[0x10 + 0x0380] * 256);
   SID_current_tune =  SID_default_tune;
-  SID_speed = 20000;
+  SID_speed = 20000;           // TODO
 
   if (DEFAULT_SONG > 0) {
     SID_current_tune = DEFAULT_SONG;

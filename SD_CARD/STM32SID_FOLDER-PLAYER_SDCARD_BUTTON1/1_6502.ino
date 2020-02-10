@@ -2,20 +2,19 @@
 // http://rubbermallet.org/fake6502.c
 
 // 6502 emulation
-// far from perfect, it runs around at 1/3 speed of 1Mhz CPU, but it is enough to do the job (emulation is need in few raster lines only anyway)
+// far from perfect, it runs very slow, once interrupts are enabled, compared to 1Mhz CPU, but it is enough to do the job (emulation is needed only in few raster lines only anyway, around 500 instructions)
 // I only edited part with read and write so it can act uppon addresses
 
 
 inline  uint8_t read6502(uint16_t address) {
- 
+
   if (address == 0x030c) { // is sid-play address?
     JSR1003 = 1; // if it's loading <20-03-10> (example: JSR $1003) value from sid_play routine, it is time for fake VIC-II irq signal
   }
   if ((address >= 0xD400) && (address < 0xD420)) {
-   // PB13_HIGH;
+    // PB13_HIGH;
     STAD4XX = 1; // sid read
     return_value = SID[address - 0xD400]; // TODO: make it unreadable //   SID
-    // PB12_LOW;
   }
 
   if ( (address >=  SID_load_start)  & (address <  SID_load_end ) ) { // sid player area
@@ -38,7 +37,7 @@ inline  uint8_t read6502(uint16_t address) {
 
 
   return return_value;
-  
+
 }
 
 
@@ -48,7 +47,7 @@ inline void write6502(uint16_t address, uint8_t value) {
 
   if ((address >= 0xD400) & (address < 0xD420)) { // writing to sid - assagn values for interrupt
     //STAD4XX = 1; // SID write signal for IRQ
-      // PB12_HIGH;
+    // PB12_HIGH;
     // SID MAGIC
     access_adress = (address - 0xD400);
     SID[ (access_adress)] = value; //  SID
@@ -81,7 +80,7 @@ inline void write6502(uint16_t address, uint8_t value) {
         Gate_bit_1 = SID[4] & 1;   //
 
         //waveform_switch_1 = (noise_bit_voice_1 << 3) | (pulse_bit_voice_1 << 2) | (sawtooth_bit_voice_1 << 1) | (triangle_bit_voice_1); // for barebone version
-        //waveform_switch_1 =  ( SID[4] >> 4);
+        //waveform_switch_1 =  ( SID[4] >> 4); // it's in IRQ
 
         break;
       case 5:
@@ -253,7 +252,7 @@ inline void write6502(uint16_t address, uint8_t value) {
       case 31:
         break;
     }
-// PB12_LOW;
+
     // STAD4XX = 1; // SID write signal for IRQ
     //PB13_HIGH;
   }
@@ -265,7 +264,7 @@ inline void write6502(uint16_t address, uint8_t value) {
         RAM[0x400 + address - SID_load_start] = value; // sid data memory space
       }
     }
-    if (address < 0x400) RAM[address] = value; // zero page, stack, player and screen ram
+    if (address < 0x400) RAM[address] = value; // zero page, stack, player and free ram
   } // LOW_RAM
 
 
@@ -294,10 +293,6 @@ inline void reset6502() {
   cpustatus |= FLAG_CONSTANT;
 
 }
-
-
-
-
 
 
 
