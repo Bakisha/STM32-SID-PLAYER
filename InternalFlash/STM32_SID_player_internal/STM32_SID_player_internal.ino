@@ -9,7 +9,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 #define RAM_SIZE 0x3000                   // set this value based on microcontroller used. maximum is 65535 bytes ( 0xFFFF HEX ) or available microcontoller's RAM
-#define TUNE_PLAY_TIME 360                // Can't implement songlenghts, manual values are needed (in seconds)//  TODO: try to determine silence in output, and skip to next tune
+#define TUNE_PLAY_TIME 180                // Can't implement songlenghts, manual values are needed (in seconds)//  TODO: try to determine silence in output, and skip to next tune
 uint8_t DEFAULT_SONG = 0;                 // 0 is automatic, from sid header, any other value is tune number
 
 /////////////////////////////////////////////////////////////////////////////////////////////
