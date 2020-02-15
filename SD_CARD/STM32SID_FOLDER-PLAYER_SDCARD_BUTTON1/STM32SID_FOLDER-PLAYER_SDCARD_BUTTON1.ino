@@ -23,7 +23,7 @@
 
 //#define RANDOM_FOLDERS                         // disable (comment line) if you want HVSC folders list to be played in alphabetical order
 
-//#include "05_HVSC.h"                              // disabled for Bluepill. Can be enabled, but maximum RAM_SIZE is 0x1400 (5120 bytes) and O0 optimatization
+//#include "01_HVSC.h"                              // disabled for Bluepill. Can be enabled, but maximum RAM_SIZE is 0x1400 (5120 bytes) and O0 optimatization
 
 const char * HVSC = "HVSC" ;                   // ---> IMPORTANT! <---  name of HVSC SID Collection folder on your SD Card ("HVSC", "C64Music", "/" or "" for root, etc"
 
