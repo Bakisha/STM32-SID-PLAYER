@@ -1,6 +1,10 @@
 // Choose your board and upload method from menu
-// Choose available RAM for emulator (depending of microcontroller) (currently set for BluePill - STM32F103C8, any core )
+// Choose available RAM for emulator (depending of microcontroller) (currently set for BluePill - STM32F103C8, ROGER's or STM32Duino core )
 // it's strongly recommended to set optimatization on FASTEST -O3 (from tool menu of Arduino IDE).
+
+// STM32-SID-Player : https://github.com/Bakisha/STM32-SID-PLAYER
+// HVSC database: https://www.hvsc.c64.org/ (download and unpack to SD Card)
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -8,77 +12,70 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-#define RAM_SIZE 0x3000                // set this value based on microcontroller used. maximum is 65535 bytes ( 0xFFFF HEX ) or available microcontoller's RAM
-#define TUNE_PLAY_TIME 180                // Can't implement songlenghts, manual values are needed (in seconds)//  TODO: try to determine silence in output, and skip to next tune
-uint8_t DEFAULT_SONG = 1;               // 0 is automatic, from sid header, any other value is tune number
-
+#define RAM_SIZE 0x3000                 // ---> IMPORTANT! <--- Set this value based on microcontroller used. maximum is 65535 bytes ( 0xFFFF HEX ) or available microcontoller's RAM
+#define TUNE_PLAY_TIME 180              // Can't implement songlenghts, manual values are needed (in seconds)//  TODO: try to determine silence in output, and skip to next tune
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 //
-// HVSC directory
+// HVSC directories
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-#define NUMBER_OF_FOLDERS 27
+//#define RANDOM_FOLDERS                         // disable (comment line) if you want HVSC folders list to be played in alphabetical order
 
-// set directories paths with sid files in it (  // must start and end with "/" )
-// press CTRL-F to replace path of HVSC folder path on your SD card
-const char * HVSC_DIR [NUMBER_OF_FOLDERS] = {
-  "/HVSC/MUSICIANS/B/Blues_Muz/" ,
-  "/HVSC/MUSICIANS/S/Sequencer/",
-  "/HVSC/DEMOS/G-L/",
-  "/HVSC/MUSICIANS/G/Gray_Matt/",
-  "/HVSC/MUSICIANS/D/Daglish_Ben/",
-  "/HVSC/MUSICIANS/R/Rowlands_Steve/",
-  "/HVSC/MUSICIANS/F/Fanta/",
-  "/HVSC/MUSICIANS/T/The_Syndrom/",
-  "/HVSC/MUSICIANS/G/Gas_On/",
-  "/HVSC/MUSICIANS/T/Tel_Jeroen/",
-  "/HVSC/MUSICIANS/L/LMan/",
-  "/HVSC/MUSICIANS/L/Laxity/",
-  "/HVSC/MUSICIANS/K/KB/",
-  "/HVSC/MUSICIANS/H/Hesford_Paul/",
-  "/HVSC/MUSICIANS/G/Goto80/",
-  "/HVSC/MUSICIANS/M/Mahoney/",
-  "/HVSC/MUSICIANS/H/Hubbard_Rob/",
-  "/HVSC/MUSICIANS/B/Blues_Muz/",
-  "/HVSC/MUSICIANS/B/Blues_Muz/Gallefoss_Glenn/",
-  "/HVSC/MUSICIANS/P/PVCF/",
-  "/HVSC/MUSICIANS/G/Gregfeel/", // 1st "random"
-  "/HVSC/MUSICIANS/J/JCH/",
-  "/HVSC/MUSICIANS/R/Rowlands_Steve/",
-  "/HVSC/MUSICIANS/H/Huelsbeck_Chris/",
-  "/HVSC/MUSICIANS/G/Galway_Martin/",
-  "/HVSC/MUSICIANS/V/Vincenzo/",
-  "/"
+//#include "05_HVSC.h"                              // disabled for Bluepill. Can be enabled, but maximum RAM_SIZE is 0x1400 (5120 bytes) and O0 optimatization
+
+const char * HVSC = "HVSC" ;                   // ---> IMPORTANT! <---  name of HVSC SID Collection folder on your SD Card ("HVSC", "C64Music", "/" or "" for root, etc"
+
+#define NUMBER_OF_FAVORITE_FOLDERS 28
+
+// set favorite directories paths with sid files in it
+const char * HVSC_FAVORITES [NUMBER_OF_FAVORITE_FOLDERS + 1] = { // path relative to main HVSC folder
+  "/" ,     // just a loop check
+  "MUSICIANS/R/Rowlands_Steve/",
+  "MUSICIANS/V/Vincenzo/",
+  "MUSICIANS/D/Daglish_Ben/",
+  "MUSICIANS/G/Gray_Matt/",
+  "MUSICIANS/G/Gas_On/",
+  "MUSICIANS/B/Blues_Muz/Gallefoss_Glenn/",
+  "MUSICIANS/B/Blues_Muz/" ,
+  "MUSICIANS/S/Sequencer/",
+  "DEMOS/G-L/",
+  "MUSICIANS/G/Gray_Matt/",
+  "MUSICIANS/F/Fanta/",
+  "MUSICIANS/T/The_Syndrom/",
+  "MUSICIANS/T/Tel_Jeroen/",
+  "MUSICIANS/L/LMan/",
+  "MUSICIANS/L/Laxity/",
+  "MUSICIANS/K/KB/",
+  "MUSICIANS/H/Hesford_Paul/",
+  "MUSICIANS/G/Goto80/",
+  "MUSICIANS/M/Mahoney/",
+  "MUSICIANS/H/Hubbard_Rob/",
+  "MUSICIANS/B/Blues_Muz/",
+  "MUSICIANS/P/PVCF/",
+  "MUSICIANS/G/Gregfeel/",
+  "MUSICIANS/J/JCH/",
+  "MUSICIANS/R/Rowlands_Steve/",
+  "MUSICIANS/H/Huelsbeck_Chris/",
+  "MUSICIANS/G/Galway_Martin/"
+
+
 };
-
 ////////////////////////////////////////////////////////////////////////////////////////////
 //
 //          hardware settings
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-#define USE_SERIAL                                // for debugging info on Serial , uncomment if it's needed
-#define USE_SERIAL1                               // for debugging info on Serial1, uncomment if it's needed
+#define USE_SERIAL                                // for debugging info on Serial (usually USB Serial), uncomment if it's needed
+//#define USE_SERIAL1                               // for debugging info on Serial1 (usually on PA9/PA10), uncomment if it's needed
 
-#define BUTTON_1        PB0                       // can be any pin , work without button, it will skip to next tune when timed out
+#define BUTTON_1        PB0                       // can be any pin, but must exist. Multiple functions
 
 #define CS_SDCARD       PA1                       // can be changed
-#define SD_CLK          PA5
-#define SD_MISO         PA6
-#define SD_MOSI         PA7
 
-#define AUDIO_OUT       PA8                        // can't be changed, this is just reminder
-
-#include <SPI.h>
-#include <SdFat.h>
-
-SdFat sd;
-SdFile root;
-SdFile sidfile;
-SdFile nextfile;
-
+#define AUDIO_OUT       PA8                       // can't be changed, this is just reminder
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -122,14 +119,25 @@ SdFile nextfile;
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#ifdef USE_HAL_DRIVER // Official ST cores. Support for multiple line of MPU
-#define USE_STM32duino_CORE //  Set in preferences: https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json and search stm32 in board manager. Choose stm32 cores by ST Microelectronics. Select your CPU from tools menu)
-#else
-#define USE_ROGER_CORE //  Set in preferences: http://dan.drown.org/stm32duino/package_STM32duino_index.json and search stm32F1 in board manager. Choose STM32F1xx core (NOTE: Only STM32F1 works)
+#ifdef USE_HAL_DRIVER
+#define USE_STM32duino_CORE
+//                                        Official ST cores. Support for multiple line of MPU
+//                                        link: https://github.com/stm32duino/Arduino_Core_STM32
+//                                        Set in preferences: https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json and search stm32 in board manager.
+//                                        Choose stm32 cores by ST Microelectronics. Select your CPU from tools menu
 #endif
 
-#include "SID.h"
-#include "6502.h"
+#ifdef __STM32F1__
+#define USE_ROGER_CORE
+//                                        Most of stuff for blue pill is made for this core
+//                                        link: https://github.com/rogerclarkmelbourne/Arduino_STM32
+//                                        Set in preferences: http://dan.drown.org/stm32duino/package_STM32duino_index.json and search stm32F1 in board manager.
+//                                        Choose STM32F1xx core (NOTE: Only STM32F1 works)
+#endif
+
+
+#include "xx_SID.h"
+#include "xx_6502.h"
 
 
 /*
