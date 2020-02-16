@@ -21,11 +21,11 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-//#define RANDOM_FOLDERS                         // disable (comment line) if you want HVSC folders list to be played in alphabetical order
+const char * HVSC = "HVSC" ;                   // ---> IMPORTANT! <---  name of HVSC SID Collection folder on your SD Card ("HVSC", "C64Music", "/" or "" for root, etc"
 
 //#include "01_HVSC.h"                              // disabled for Bluepill. Can be enabled, but maximum RAM_SIZE is 0x1400 (5120 bytes) and O0 optimatization
+//                                                    When Random play is enabled, must manual switch between playlists
 
-const char * HVSC = "HVSC" ;                   // ---> IMPORTANT! <---  name of HVSC SID Collection folder on your SD Card ("HVSC", "C64Music", "/" or "" for root, etc"
 
 #define NUMBER_OF_FAVORITE_FOLDERS 28
 
@@ -129,7 +129,7 @@ const char * HVSC_FAVORITES [NUMBER_OF_FAVORITE_FOLDERS + 1] = { // path relativ
 
 #ifdef __STM32F1__
 #define USE_ROGER_CORE
-//                                        Most of stuff for blue pill is made for this core
+//                                        Most of stuff for blue pill is made with this core
 //                                        link: https://github.com/rogerclarkmelbourne/Arduino_STM32
 //                                        Set in preferences: http://dan.drown.org/stm32duino/package_STM32duino_index.json and search stm32F1 in board manager.
 //                                        Choose STM32F1xx core (NOTE: Only STM32F1 works)

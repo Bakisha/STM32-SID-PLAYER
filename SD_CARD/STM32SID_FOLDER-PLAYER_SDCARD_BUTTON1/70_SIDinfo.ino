@@ -143,7 +143,8 @@ inline void HELP () {
   debugPrintTXTln  ("- 3 short clicks - play next folder");
   debugPrintTXTln  ("- 4 short clicks - show HELP");
   debugPrintTXTln  ("- 5 short clicks - show info about sid file");
-  debugPrintTXTln  ("- 6 short clicks - switch FAVORITE/ALL folder list");
+  debugPrintTXTln  ("- 6 short clicks - switch FAVORITE/ALL folder playlist");
+  debugPrintTXTln  ("- 7 short clicks - switch random play ON/OFF");
   debugPrintTXTln  ("- button holding - play tune as fast as possible (fast forward)");
 
 

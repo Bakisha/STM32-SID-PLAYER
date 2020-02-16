@@ -178,6 +178,19 @@ void loop() {
             play_next_tune = false;
             try_again = true;
             break;
+
+          case 7:
+            // 7 clicks -  switch between random and alphabetical playlist
+            RANDOM_FOLDERS = !RANDOM_FOLDERS;
+            if (RANDOM_FOLDERS) {
+
+              debugPrintTXTln ("Random:    ON");
+            }
+            else {
+
+              debugPrintTXTln ("Random:    OFF");
+            }
+            break;
         }
 
         /////////////////////////////////////////////////

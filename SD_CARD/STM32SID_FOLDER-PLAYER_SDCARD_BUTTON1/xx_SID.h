@@ -40,6 +40,9 @@ bool IS_SID_FILE = false; //  for extension check
 int16_t current_folder = -1 ; // so first load is set to 0
 bool favorites_finished = 0;
 
+bool RANDOM_FOLDERS = false;                     // true/false - play folders playlist in alphabetical or random order
+//                                            
+
 volatile bool next_tune = false;
 volatile bool play_next_folder = true;
 volatile bool try_again = true;

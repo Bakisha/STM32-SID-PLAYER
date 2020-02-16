@@ -52,80 +52,83 @@ inline void ChangeFolder() {
   debugPrintTXTln("    changing directory         ");
   debugPrintTXTln("-------------------------------");
 
-  if (!favorites_finished) {
+if (!favorites_finished) {
 
+
+  if (RANDOM_FOLDERS) {
+    current_folder = random(NUMBER_OF_FAVORITE_FOLDERS); // as much "random" it is
+  }
+  else { // not random folder
     if (current_folder >= NUMBER_OF_FAVORITE_FOLDERS) {
       current_folder = 0;
 
-#ifdef NUMBER_OF_ALL_FOLDERS // if HVSC folder is included
-      favorites_finished = true;
+#ifdef NUMBER_OF_ALL_FOLDERS // if HVSC folders is included
+      favorites_finished = !favorites_finished;
 #endif
+    }
+    else {
+      current_folder = current_folder + 1;
+    }
+  }
+
+  // get name for current directory
+  strcpy (SID_DIR_name, "");                                                  // empty string
+  strcat (SID_DIR_name,  HVSC);                                               // add main HVSC path to string
+  strcat (SID_DIR_name,  "/");
+  strcat (SID_DIR_name,  HVSC_FAVORITES[ current_folder ]);                   // add directory name to string
+
+}
+else {
+#ifdef NUMBER_OF_ALL_FOLDERS // if HVSC folders is included
+
+  if (RANDOM_FOLDERS) {
+    current_folder = random(NUMBER_OF_ALL_FOLDERS); // as much "random" it is
+  }
+  else { // not random folder
+    if (current_folder >= NUMBER_OF_ALL_FOLDERS) {
+      current_folder = 0;
+
+       favorites_finished = !favorites_finished;
 
     }
     else {
       current_folder = current_folder + 1;
     }
+  }
+  strcpy (SID_DIR_name, "");                                                  // empty string
+  strcat (SID_DIR_name,  HVSC);                                               // add main HVSC path to string
+  strcat (SID_DIR_name,  "/");
+  strcat (SID_DIR_name,  HVSC_ALL[ current_folder ]);                         // add directory name to string
+#endif
+}
 
-    // get name for current directory
-    strcpy (SID_DIR_name, "");                                                  // empty string
-    strcat (SID_DIR_name,  HVSC);                                               // add main HVSC path to string
-    strcat (SID_DIR_name,  "/");
-    strcat (SID_DIR_name,  HVSC_FAVORITES[ current_folder ]);                   // add directory name to string
+
+
+  root.close(); // close root, before setting new directory
+
+  if (root.open(SID_DIR_name)) { // set directory, keep root opened until new directory is needed
+
+    play_next_folder = false;
+    load_next_file = true;
+    try_again = true;
 
 
   }
   else {
+    // this shouldn't be. it is supposed to always be able to open folder
+    // mybe wrong path in directory array list
+    // maybe file pathname is longer then array. either way, just load next folder/file
+    debugPrintTXTln("");
+    debugPrintTXT("opening folder: ");
+    debugPrintTXT(SID_DIR_name);
+    debugPrintTXTln(" failed");
+    debugPrintTXTln("- check your favorite folders list");
+    debugPrintTXTln("- check your SD Card  connection");
 
-#ifdef NUMBER_OF_ALL_FOLDERS // if HVSC folder is included
-
-#ifdef RANDOM_FOLDERS
-
-    current_folder = random(RANDOM_FOLDERS); // as much "random" it is
-
-#else
-    if (current_folder >= NUMBER_OF_ALL_FOLDERS) { // play list 1 by 1
-      current_folder = 0;
-    }
-    else {
-      current_folder = current_folder + 1;
-    }
-#endif
-
-    strcpy (SID_DIR_name, "");                                                  // empty string
-    strcat (SID_DIR_name,  HVSC);                                               // add main HVSC path to string
-    strcat (SID_DIR_name,  "/");
-    strcat (SID_DIR_name,  HVSC_ALL[ current_folder ]);                         // add directory name to string
-#endif
-
+    play_next_folder = true;
+    load_next_file = true;
+    try_again = true;
   }
-
-
-
-root.close(); // close root, before setting new directory
-
-if (root.open(SID_DIR_name)) { // set directory, keep root opened until new directory is needed
-
-  play_next_folder = false;
-  load_next_file = true;
-  try_again = true;
-
-
-}
-else {
-  // this shouldn't be. it is supposed to always be able to open folder
-  // mybe wrong path in directory array list
-  // maybe file pathname is longer then array. either way, just load next folder/file
-  debugPrintTXTln("");
-  debugPrintTXT("opening folder: ");
-  debugPrintTXT(SID_DIR_name);
-  debugPrintTXTln(" failed");
-  debugPrintTXTln("- check your favorite folders list");
-  debugPrintTXTln("- check your SD Card  connection");
-
-  play_next_folder = true;
-  load_next_file = true;
-  try_again = true;
-}
 }
 
 
