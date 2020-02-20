@@ -8,6 +8,8 @@
 
 inline  uint8_t read6502(uint16_t address) {
 
+  return_value = 0x60; // if it's not in any of knowed area, assume it's 0x60 (RTS) (Dan Dare 3 fix)
+
   if (address == 0x030c) { // player's  sid-play subroutine's adress
     JSR1003 = 1; // if it's loading <20-03-10> (example: JSR $1003) value from sid_play routine, it is time for fake VIC-II irq signal
   }
@@ -22,18 +24,20 @@ inline  uint8_t read6502(uint16_t address) {
     if ( LOW_RAM == true ) { // hack to relocate addresses from SID_start to 0x400
 
       if ( (0x400 + address - SID_load_start) < (RAM_SIZE )) { // read from RAM if it's in available RAM,
-        return_value = RAM[0x400 + address - SID_load_start] ;
+        return_value = PEEK (0x400 + address - SID_load_start) ;
       }
 
     }
 
   }
 
+
   if ( LOW_RAM == false ) {
-    if (address <= (RAM_SIZE )) return_value = RAM[address] ; // for  memory space that is covered by RAM
+    if (address <= (RAM_SIZE )) return_value = PEEK (address) ; // for  memory space that is covered by RAM
 
   }
-  if ( address < (0x400) ) return_value = RAM[address] ; // zero page, stack, player, screen RAM
+
+  if ( address < (0x400) ) return_value = PEEK (address) ; // zero page, stack, player, screen RAM
 
 
   return return_value;
@@ -261,18 +265,18 @@ inline void write6502(uint16_t address, uint8_t value) {
   if ( LOW_RAM == true ) {
     if ( (address >=  SID_load_start)   & (address <  SID_load_end ) ) {
       if ( 0x400 + address - SID_load_start < (RAM_SIZE )) { // write to memory only if it fits into RAM, rest is ignored.
-        RAM[0x400 + address - SID_load_start] = value; // sid data memory space
+        POKE (0x400 + address - SID_load_start, value); // sid data memory space
       }
     }
- 
-    if (address < 0x400) RAM[address] = value; // zero page, stack, player and free ram
+
+    if (address < 0x400) POKE (address, value); // zero page, stack, player and free ram
   } // LOW_RAM
 
 
 
   if ( LOW_RAM == false ) {
     if (address <= (RAM_SIZE )) {
-      RAM[address] = value; // for  memory space that is covered by RAM
+      POKE (address, value); // for  memory space that is covered by RAM
     }
   } // LOW_RAM
 

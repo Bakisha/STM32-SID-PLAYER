@@ -56,18 +56,18 @@ inline void set_tune_speed () { // set tune speed best on IRQ_TYPE_PER_TUNE and 
 
 inline bool Compatibility_check() {
 
-  MagicID = RAM[0 +  0x0380] ;
-  VERSION =  RAM[0x05 +  0x0380];
+  MagicID = PEEK (0 +  0x0380) ;
+  VERSION =  PEEK (0x05 +  0x0380);
   RAM_OVERFLOW = false;
   if ( ( SID_data_size + 0x0400 - 0x7e) > RAM_SIZE    ) {
     RAM_OVERFLOW = true;
   }
 
   LOAD_ADDRESS = 0 ;
-  SID_load_start = (RAM[0x08 +  0x0380] * 256) + (RAM[0x09 +  0x0380]);
+  SID_load_start = (PEEK (0x08 +  0x0380) * 256) + (PEEK (0x09 +  0x0380));
 
   if (SID_load_start == 0) {
-    SID_load_start = RAM[0x7c + 0x380] + (RAM[0x7d + 0x380] * 256);
+    SID_load_start = PEEK (0x7c + 0x380) + (PEEK (0x7d + 0x380) * 256);
   }
   if ( SID_load_start >= 0x07E8)  {
     LOAD_ADDRESS = SID_load_start;
@@ -81,10 +81,10 @@ inline bool Compatibility_check() {
     LOW_RAM = false;
   }
 
-  SID_play =  RAM[0x0d + 0x0380] + (RAM[0x0c + 0x0380] * 256);
-  SID_init = RAM[0x0b + 0x0380] + (RAM[0x0a + 0x0380] * 256);
-  SID_number_of_tunes =  RAM[0x0f + 0x0380] + ( RAM[0x0e + 0x0380] * 256);
-  SID_default_tune =  RAM[0x11 + 0x0380] + ( RAM[0x10 + 0x0380] * 256);
+  SID_play =  PEEK (0x0d + 0x0380) + (PEEK (0x0c + 0x0380) * 256);
+  SID_init = PEEK (0x0b + 0x0380) + (PEEK (0x0a + 0x0380) * 256);
+  SID_number_of_tunes =  PEEK (0x0f + 0x0380) + ( PEEK (0x0e + 0x0380) * 256);
+  SID_default_tune =  PEEK (0x11 + 0x0380) + ( PEEK (0x10 + 0x0380) * 256);
   SID_current_tune =  SID_default_tune;
 
 
@@ -94,15 +94,15 @@ inline bool Compatibility_check() {
   // for tunes > 32 , it's tune&0x1f
   // it is just indication what type of interrupts is used: VIC or CIA, and only default values are used.
   // Multispeed tune's  code set it's own VIC/CIA values. Must emulate VIC and CIA to be able to play(detect) multi speed tunes.
-  IRQ_TYPE_PER_TUNE = (      ( (RAM[0x15 + 0x0380]) )
-                             |      ( (RAM[0x14 + 0x0380]) << 8 )
-                             |                          ( (RAM[0x13 + 0x0380]) << 16 )
-                             |                          ( (RAM[0x12 + 0x0380]) << 24 )
+  IRQ_TYPE_PER_TUNE = (      ( (PEEK (0x15 + 0x0380)) )
+                             |      ( (PEEK (0x14 + 0x0380)) << 8 )
+                             |                          ( (PEEK (0x13 + 0x0380)) << 16 )
+                             |                          ( (PEEK (0x12 + 0x0380)) << 24 )
                       );
 
 
 
-  FLAGS76 = ( ( (RAM[0x76 + 0x0380]) << 8 ) | (RAM[0x77 + 0x0380]) ); // 16bit big endian number
+  FLAGS76 = ( ( (PEEK (0x76 + 0x0380)) << 8 ) | (PEEK (0x77 + 0x0380)) ); // 16bit big endian number
 
   ComputeMUSplayer = FLAGS76 & 0x01;                        // bit0 - if set, not playable
 
@@ -132,12 +132,12 @@ inline bool Compatibility_check() {
   LOW_RAM_uncompatible = false;
   if (LOW_RAM) {
     if ( (SID_play < SID_load_start) | (SID_play > SID_load_end) ) {
-    LOW_RAM_uncompatible = true;
+      LOW_RAM_uncompatible = true;
+    }
   }
-}
 
 
-if (
+  if (
     (MagicID != 0x50) /*short version */
     | (RAM_OVERFLOW)
     | (VERSION < 2)
@@ -157,12 +157,12 @@ if (
 inline void player_setup() {
 
   for ( i = 0; i < 0x80; i++) {
-    RAM[i + 0x0300] = MyROM[i] ; //
+    POKE (i + 0x0300, MyROM[i] ); //
   }
-  RAM[0x0304] = SID_current_tune - 1 ;
-  RAM[0x0307] = (SID_init >> 8) & 0xff;
-  RAM[0x0306] = SID_init & 0xff;
-  RAM[0x0310] = (SID_play >> 8) & 0xff;
-  RAM[0x030f] = SID_play & 0xff;
+  POKE (0x0304, SID_current_tune - 1 );
+  POKE (0x0307, (SID_init >> 8) & 0xff);
+  POKE (0x0306, SID_init & 0xff);
+  POKE (0x0310, (SID_play >> 8) & 0xff);
+  POKE (0x030f, SID_play & 0xff);
 
 }

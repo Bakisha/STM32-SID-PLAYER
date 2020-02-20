@@ -8,14 +8,14 @@ inline uint32_t FreeBytes() {
 
 // set serial
 inline void debugInit () {
- 
+
 #ifdef USE_SERIAL
-  Serial.begin(115200); // while (!Serial) {    yield();  }
+  Serial.begin(SERIAL_SPEED); // while (!Serial) {    yield();  }
 #endif
 #ifdef USE_SERIAL1
-  Serial1.begin(115200); //while (!Serial1) {    yield();  }
+  Serial1.begin(SERIAL_SPEED); //while (!Serial1) {    yield();  }
 #endif
- delay(2000);
+  delay(2000);
 }
 //  Serial.print
 inline void debugPrintTXT (const char* output) {

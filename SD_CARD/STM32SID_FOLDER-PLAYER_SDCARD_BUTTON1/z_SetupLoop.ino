@@ -12,34 +12,12 @@ void setup() {
 
   pinMode(LED_BUILTIN, OUTPUT);
   randomSeed(millis());
-  debugInit();
+  debugInit(); // in 90_debug.ino
 
   autoconfigFinished = false; // do the autoconfig only once
-  favorites_finished = false;
 
-  while (!sd.begin(CS_SDCARD, SD_SCK_MHZ(1))) { // 1Mhz - safest sd card speed
-    debugPrintTXTln("fatal error - can't open sd card");
+  initSD();  // in 10_SDcard.ino
 
-    digitalWrite(LED_BUILTIN, HIGH);
-    delay(500);
-    digitalWrite(LED_BUILTIN, LOW);
-    delay(500);
-    // stop if can't open sd card
-  }
-
-
-  while (!root.open("/")) {// stop if can't open root of sd card
-    debugPrintTXTln("fatal error -  can't open root folder");
-
-    digitalWrite(LED_BUILTIN, HIGH);
-    delay(500);
-    digitalWrite(LED_BUILTIN, LOW);
-    delay(500);
-
-  }
-  // open root for 2 reasons:
-  // 1 - program stops if root folder can't be opened
-  // 2 - it is closed first thing in loop function
   play_next_folder = true; // change folder when entered loop
   load_next_file = true;  // load file when entered loop
   try_again = true;  // keep trying until playable sid file is found
@@ -74,12 +52,12 @@ void loop() {
   // do autoconfig only one time when sid is loaded to RAM
   if (!autoconfigFinished) {
     if ( PLAYABLE_SID) {
-      debugPrintTXTln("");
+      //debugPrintTXTln("");
       CPU_test(); // benchmark 6502 emulator timing
       autoconfigMultiplier(); // benchmark SID emulator timing, set multiplier
       InitHardware(); // Setup timers and interrupts
       FRAMEtest(); // test 1 frame
-      debugPrintTXTln("");
+      //debugPrintTXTln("");
       HELP();
       autoconfigFinished = true; // do the autoconfig only once
     }
@@ -89,6 +67,16 @@ void loop() {
   instructions = 0;
   Emu_uS = 0;
   VIC_irq_request = 0;
+  if (JAMMED) {
+    JAMMED = false;
+    debugPrintTXTln ("JAMMED          - loading next file ");
+    // add more line here depending on lcd's height
+  }
+  else {
+    JAMMED = false;
+    debugPrintTXTln ("");
+
+  }
   ///////////////////////////////////////
   // Player loop
   ///////////////////////////////////////
@@ -101,7 +89,8 @@ void loop() {
     }
     else {
       // load next file when jammed
-      debugPrintTXTln ("JAMMED          - loading next file ");
+      JAMMED = true;
+      //debugPrintTXTln ("JAMMED          - loading next file ");
       load_next_file = true;
       try_again = true;
       play_next_tune = false;
@@ -125,73 +114,23 @@ void loop() {
 
         digitalWrite(LED_BUILTIN, HIGH);
 
-        switch ( GetButtonStatus() ) {
+        checkButton1();
 
-          case 0:
-            // tralalala
-            break;
-          case -1:
-            // 3s long press and holding - play tune as fast as possible (fast forward)
-            VIC_irq_request = 1;
-            break;
-
-          case 1:
-            // 1 short click - play next tune
-            play_next_tune = true;
-            tune_play_counter = 0;
-            delay(100);
-            break;
-
-          case 2:
-            // two clicks - play next file
-            load_next_file = true;
-            play_next_tune = false;
-            try_again = true;
-            break;
-
-          case 3:
-            // 3 clicks - play next folder
-            play_next_folder = true;
-            load_next_file = true;
-            play_next_tune = false;
-            try_again = true;
-            break;
-
-          case 4:
-            // 4 clicks - show HELP
-            HELP();
-            break;
-
-          case 5:
-            // 5 clicks -  show info about sid file
-            infoSID();
-            break;
-
-          case 6:
-            // 6 clicks - switch/reset between FAVORITE/ALL folder playlist.
-#ifdef NUMBER_OF_ALL_FOLDERS // if HVSC folder is included
-            favorites_finished =   !favorites_finished ;
-#endif
-            current_folder = 0;
-            play_next_folder = true;
-            load_next_file = true;
-            play_next_tune = false;
-            try_again = true;
-            break;
-
-          case 7:
-            // 7 clicks -  switch between random and alphabetical playlist
-            RANDOM_FOLDERS = !RANDOM_FOLDERS;
-            if (RANDOM_FOLDERS) {
-
-              debugPrintTXTln ("Random:    ON");
-            }
-            else {
-
-              debugPrintTXTln ("Random:    OFF");
-            }
-            break;
-        }
+        /*
+                // enable this for fun with Arduino IDE's serial plotter :-)
+                Real_uS_end = micros();
+                Real_uS = Real_uS_end - Real_uS_start;
+                debugPrintTXT("(uS)  Real: ");
+                debugPrintNUMBER(Real_uS );
+                debugPrintTXT(" Emulated: ");
+                debugPrintNUMBER(Emu_uS);
+                debugPrintTXT(" Speed: ");
+                debugPrintNUMBER(uint32_t((100 * Emu_uS) / Real_uS ));
+                debugPrintTXT("%");
+                debugPrintTXTln("");
+                Emu_uS = 0;
+                Real_uS = 0;
+        */
 
         /////////////////////////////////////////////////
         // play next tune check (once per frame)
@@ -209,30 +148,15 @@ void loop() {
             play_next_tune = false;
           }
           else {
-            play_next_tune = false; // set speed and play next tune
+
             set_tune_speed ();
-            SID_info_tune();
+            infoSID();
+            play_next_tune = false; // set speed and play next tune
             reset6502();
             reset_SID();
-            RAM[0x0304] = SID_current_tune - 1 ;
+            POKE (0x0304, SID_current_tune - 1 ); // player's address for init tune
           }
         } // play next tune check
-
-        /*
-                // enable this for fun with Arduino IDE's serial plotter :-)
-                Real_uS_end = micros();
-                Real_uS = Real_uS_end - Real_uS_start;
-                debugPrintTXT("(uS)  Real: ");
-                debugPrintNUMBER(Real_uS );
-                debugPrintTXT(" Emulated: ");
-                debugPrintNUMBER(Emu_uS);
-                debugPrintTXT(" Speed: ");
-                debugPrintNUMBER(uint32_t((100 * Emu_uS) / Real_uS ));
-                debugPrintTXT("%");
-                debugPrintTXTln("");
-                Emu_uS = 0;
-                Real_uS = 0;
-        */
 
 
       } // code per frame

@@ -1,5 +1,5 @@
 #include <SPI.h>
-#include <SdFat.h>
+#include <SdFat.h>  // install from board manager or from:  https://github.com/greiman/SdFat
 
 #define SD_CLK          PA5
 #define SD_MISO         PA6
@@ -10,14 +10,40 @@ SdFile root;
 SdFile sidfile;
 SdFile nextfile;
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+inline void initSD () { // load header to RAM at $0380
+  while (!sd.begin(CS_SDCARD, SD_SCK_MHZ(SD_SPEED))) { // 1Mhz - safest sd card speed
+    debugPrintTXTln("fatal error - can't open sd card");
+
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(500);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(500);
+    // stop if can't open sd card
+  }
+
+
+  while (!root.open("/")) {// stop if can't open root of sd card
+    debugPrintTXTln("fatal error -  can't open root folder");
+
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(500);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(500);
+
+  }
+  // open root for 2 reasons:
+  // 1 - program stops if root folder can't be opened
+  // 2 - it is closed first thing in loop function
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 inline void header_SD () { // load header to RAM at $0380
 
   sidfile.seekSet( 0 );
   for (int header = 0; header < 0x7e; header++) {
-    RAM[header + 0x0380] = sidfile.read();
+    POKE (header + 0x0380, sidfile.read());
   }
 }
 
@@ -30,12 +56,12 @@ inline void SD_LOAD() {
 
     if ( LOW_RAM == true) {
       if (i < (RAM_SIZE - 0x0400) ) {
-        RAM[0x400 + i] =  sidfile.read() ;
+        POKE (0x400 + i,  sidfile.read()) ;
       }
     }
     if ( LOW_RAM == false)   {
       if (i < (RAM_SIZE ) ) {
-        RAM[SID_load_start + i] =  sidfile.read() ;
+        POKE (SID_load_start + i,  sidfile.read() );
       }
     }
   }
@@ -46,61 +72,64 @@ inline void SD_LOAD() {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 inline void ChangeFolder() {
-
+  HELP ();
   debugPrintTXTln("");
   debugPrintTXTln("-------------------------------");
   debugPrintTXTln("    changing directory         ");
   debugPrintTXTln("-------------------------------");
 
-if (!favorites_finished) {
+  if (!favorites_finished) {
 
 
-  if (RANDOM_FOLDERS) {
-    current_folder = random(NUMBER_OF_FAVORITE_FOLDERS); // as much "random" it is
-  }
-  else { // not random folder
-    if (current_folder >= NUMBER_OF_FAVORITE_FOLDERS) {
-      current_folder = 0;
+    if (RANDOM_FOLDERS) {
+      current_folder = random(NUMBER_OF_FAVORITE_FOLDERS); // as much "random" it is
+    }
+    else { // not random folder
+      if (current_folder >= NUMBER_OF_FAVORITE_FOLDERS) {
+        current_folder = 0;
 
 #ifdef NUMBER_OF_ALL_FOLDERS // if HVSC folders is included
-      favorites_finished = !favorites_finished;
+        favorites_finished = !favorites_finished;
 #endif
+      }
+      else {
+        current_folder = current_folder + 1;
+      }
     }
-    else {
-      current_folder = current_folder + 1;
-    }
+
+    // get name for current directory
+    strcpy (SID_DIR_name, "");                                                  // empty string
+    strcat (SID_DIR_name,  HVSC);                                               // add main HVSC path to string
+    strcat (SID_DIR_name,  "/");
+    strcat (SID_DIR_name,  HVSC_FAVORITES[ current_folder ]);                   // add directory name to string
+
   }
-
-  // get name for current directory
-  strcpy (SID_DIR_name, "");                                                  // empty string
-  strcat (SID_DIR_name,  HVSC);                                               // add main HVSC path to string
-  strcat (SID_DIR_name,  "/");
-  strcat (SID_DIR_name,  HVSC_FAVORITES[ current_folder ]);                   // add directory name to string
-
-}
-else {
+  else {
 #ifdef NUMBER_OF_ALL_FOLDERS // if HVSC folders is included
 
-  if (RANDOM_FOLDERS) {
-    current_folder = random(NUMBER_OF_ALL_FOLDERS); // as much "random" it is
-  }
-  else { // not random folder
-    if (current_folder >= NUMBER_OF_ALL_FOLDERS) {
-      current_folder = 0;
-
-       favorites_finished = !favorites_finished;
-
+    if (RANDOM_FOLDERS) {
+      current_folder = random(NUMBER_OF_ALL_FOLDERS); // as much "random" it is
     }
-    else {
-      current_folder = current_folder + 1;
+    else { // not random folder
+      if (current_folder >= NUMBER_OF_ALL_FOLDERS) {
+        current_folder = 0;
+
+        favorites_finished = !favorites_finished;
+
+      }
+      else {
+        current_folder = current_folder + 1;
+      }
     }
-  }
-  strcpy (SID_DIR_name, "");                                                  // empty string
-  strcat (SID_DIR_name,  HVSC);                                               // add main HVSC path to string
-  strcat (SID_DIR_name,  "/");
-  strcat (SID_DIR_name,  HVSC_ALL[ current_folder ]);                         // add directory name to string
+    strcpy (SID_DIR_name, "");                                                  // empty string
+    strcat (SID_DIR_name,  HVSC);                                               // add main HVSC path to string
+    strcat (SID_DIR_name,  "/");
+    strcat (SID_DIR_name,  HVSC_ALL[ current_folder ]);                         // add directory name to string
+#else
+    favorites_finished = !favorites_finished; //break;
 #endif
-}
+
+  }
 
 
 
@@ -201,7 +230,7 @@ inline void fileLoader() {
         if ( PLAYABLE_SID) { // play tune if no errors
           infoSID(); // print out info on any output that is defined
           reset6502(); // reset CPU
-          RAM[0x0304] = SID_current_tune - 1 ; // set tune number
+          POKE (0x0304, SID_current_tune - 1) ; // set tune number
 
           play_next_folder = false;
           load_next_file = false;

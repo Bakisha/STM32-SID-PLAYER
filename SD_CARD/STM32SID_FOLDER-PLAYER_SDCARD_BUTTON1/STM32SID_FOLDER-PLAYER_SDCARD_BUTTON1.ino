@@ -15,9 +15,18 @@
 #define RAM_SIZE 0x3000                 // ---> IMPORTANT! <--- Set this value based on microcontroller used. maximum is 65535 bytes ( 0xFFFF HEX ) or available microcontoller's RAM
 #define TUNE_PLAY_TIME 180              // Can't implement songlenghts, manual values are needed (in seconds)//  TODO: try to determine silence in output, and skip to next tune
 
+
+
+
+
+
+
+
+
+
 /////////////////////////////////////////////////////////////////////////////////////////////
 //
-// HVSC directories
+//           Player configuration:
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -27,11 +36,15 @@ const char * HVSC = "HVSC" ;                   // ---> IMPORTANT! <---  name of 
 //                                                    When Random play is enabled, must manual switch between playlists
 
 
-#define NUMBER_OF_FAVORITE_FOLDERS 28
+#define NUMBER_OF_FAVORITE_FOLDERS 29             // set number of folder for playlist. Must have at least 1.
 
-// set favorite directories paths with sid files in it
-const char * HVSC_FAVORITES [NUMBER_OF_FAVORITE_FOLDERS + 1] = { // path relative to main HVSC folder
+
+const char * HVSC_FAVORITES                       //  set favorite directories paths (relative to main HVSC folder) with sid files in it
+[NUMBER_OF_FAVORITE_FOLDERS + 1] =
+{
   "/" ,     // just a loop check
+  "MUSICIANS/D/Dunn_David/",
+  "MUSICIANS/T/Tel_Jeroen/",
   "MUSICIANS/R/Rowlands_Steve/",
   "MUSICIANS/V/Vincenzo/",
   "MUSICIANS/D/Daglish_Ben/",
@@ -43,8 +56,7 @@ const char * HVSC_FAVORITES [NUMBER_OF_FAVORITE_FOLDERS + 1] = { // path relativ
   "DEMOS/G-L/",
   "MUSICIANS/G/Gray_Matt/",
   "MUSICIANS/F/Fanta/",
-  "MUSICIANS/T/The_Syndrom/",
-  "MUSICIANS/T/Tel_Jeroen/",
+  "MUSICIANS/T/The_Syndrom/",  
   "MUSICIANS/L/LMan/",
   "MUSICIANS/L/Laxity/",
   "MUSICIANS/K/KB/",
@@ -60,22 +72,36 @@ const char * HVSC_FAVORITES [NUMBER_OF_FAVORITE_FOLDERS + 1] = { // path relativ
   "MUSICIANS/H/Huelsbeck_Chris/",
   "MUSICIANS/G/Galway_Martin/"
 
-
 };
+
+bool favorites_finished = false;                  // - initial value. If "HVSC.h" is included, "true" will play it, otherwise, favorite folders will play first.
+bool RANDOM_FOLDERS = false;                      // - play folders playlist in alphabetical or random order (note: when enabled, switching to other folder playlist is only possible with button)
+
 ////////////////////////////////////////////////////////////////////////////////////////////
 //
 //          hardware settings
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-#define USE_SERIAL                                // for debugging info on Serial (usually USB Serial), uncomment if it's needed
-//#define USE_SERIAL1                               // for debugging info on Serial1 (usually on PA9/PA10), uncomment if it's needed
+#define AUDIO_OUT       PA8                 // can't be changed, this is just reminder 
 
-#define BUTTON_1        PB0                       // can be any pin, but must exist. Multiple functions
+#define USE_SERIAL                          // for debugging info on Serial (usually USB Serial), uncomment if it's needed
+//#define USE_SERIAL1                         // for debugging info on Serial1 (usually on PA9/PA10), uncomment if it's needed
+#define SERIAL_SPEED 9600                   // Speed of serial connection
 
-#define CS_SDCARD       PA1                       // can be changed
+#define CS_SDCARD       PA1                 // can be changed
+#define SD_SPEED        20                   // SD Card SPI speed in MHz
 
-#define AUDIO_OUT       PA8                       // can't be changed, this is just reminder
+#define BUTTON_1        PB0                 // can be any pin, but must exist. Multiple functions:
+//                                             - 1 short click  - play next tune
+//                                             - 2 short clicks - play next file
+//                                             - 3 short clicks - play next folder
+//                                             - 4 short clicks - show HELP (on any output defined)
+//                                             - 5 short clicks - show info about sid file (on any output defined)
+//                                             - 6 short clicks - switch FAVORITE/ALL folder playlist
+//                                             - 7 short clicks - switch random play ON/OFF
+//                                             - button holding - play tune as fast as possible (fast forward)
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -118,25 +144,30 @@ const char * HVSC_FAVORITES [NUMBER_OF_FAVORITE_FOLDERS + 1] = { // path relativ
 // Don't change stuff bellow
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-#ifdef USE_HAL_DRIVER
+#if defined(USE_HAL_DRIVER)
 #define USE_STM32duino_CORE
 //                                        Official ST cores. Support for multiple line of MPU
 //                                        link: https://github.com/stm32duino/Arduino_Core_STM32
 //                                        Set in preferences: https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json and search stm32 in board manager.
 //                                        Choose stm32 cores by ST Microelectronics. Select your CPU from tools menu
-#endif
 
-#ifdef __STM32F1__
+
+#elif defined(__STM32F1__)
 #define USE_ROGER_CORE
-//                                        Most of stuff for blue pill is made with this core
+//                                        Most of stuff for blue pill is made for this core
 //                                        link: https://github.com/rogerclarkmelbourne/Arduino_STM32
 //                                        Set in preferences: http://dan.drown.org/stm32duino/package_STM32duino_index.json and search stm32F1 in board manager.
 //                                        Choose STM32F1xx core (NOTE: Only STM32F1 works)
+#elif defined(AVR)
+//                                        Must test this some day with Arduino MEGA
+//
+#error "Unsupported core - will try someday when i learn to setup interrupts and pwm on pins, without need to memorize TTROA, DDROB or DDWhateva"
+#else
+#error "Unknown or unsupported core. Maybe even both"
 #endif
 
-
 #include "xx_SID.h"
+#include "xx_RAM.h"
 #include "xx_6502.h"
 
 

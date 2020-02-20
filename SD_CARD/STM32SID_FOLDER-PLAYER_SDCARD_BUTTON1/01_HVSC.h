@@ -1,5 +1,5 @@
 // Folder list made with the magic of "little" copy-pasting and search-replacing in excel :-)
-
+#ifndef NUMBER_OF_ALL_FOLDERS
 #define NUMBER_OF_ALL_FOLDERS 1746
 
 const char * HVSC_ALL [NUMBER_OF_ALL_FOLDERS + 1] = {
@@ -1751,3 +1751,4 @@ const char * HVSC_ALL [NUMBER_OF_ALL_FOLDERS + 1] = {
   "MUSICIANS/Z/ZZR/",
   "/"
 };
+#endif

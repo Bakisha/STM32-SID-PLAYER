@@ -53,7 +53,7 @@ inline void InitHardware() { // setup pins and IRQ
 }
 
 inline void SetAUDIO () {
-  
+
 #ifdef USE_ROGER_CORE
   Timer1.setCompare(TIMER_CH1, main_volume);
 #endif

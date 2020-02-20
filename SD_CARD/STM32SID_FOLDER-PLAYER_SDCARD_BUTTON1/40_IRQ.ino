@@ -1,4 +1,3 @@
-
 #ifdef USE_ROGER_CORE
 void irq_handler(void) { //
 #endif
@@ -807,6 +806,7 @@ void irq_handler(void) { //
     SID[26] = POTY;
     SID[27] = OSC3;
     SID[28] = ENV3;
+
 
 
   }

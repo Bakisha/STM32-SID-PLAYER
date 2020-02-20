@@ -7,9 +7,10 @@ extern "C" {
 #define _6502
 
 
+
 uint8_t LOW_RAM = false;
 
-uint8_t RAM[RAM_SIZE];
+
 
 uint16_t access_adress = 0x00;
 uint16_t return_value = 0x00;
@@ -18,7 +19,7 @@ uint16_t return_value = 0x00;
 /* Contents of file MyROM.bin */
 const int MyROM_size = 256;
 const uint8_t MyROM[256] = {
-    //  code and opcodes generated in Commodore 128's emulator, in Monitor (old habits die hard)
+  //  code and opcodes generated in Commodore 128's emulator, in Monitor (old habits die hard)
 
   0xEA,               //  NOP
   0xEA,               //  NOP

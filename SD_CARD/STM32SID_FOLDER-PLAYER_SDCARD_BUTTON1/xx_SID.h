@@ -32,16 +32,14 @@ bool RAM_OVERFLOW = 0;
 
 bool PLAYABLE_SID = false;
 bool autoconfigFinished = false;
+bool JAMMED = false;
 
 char SID_filename[128] ; // reserve 128 bytes for file name
 char SID_DIR_name [128] ; // reserve 128 bytes for directory path name
 char SID_path_filename [256] ; // reserve 256 bytes for full path of file
 bool IS_SID_FILE = false; //  for extension check
 int16_t current_folder = -1 ; // so first load is set to 0
-bool favorites_finished = 0;
-
-bool RANDOM_FOLDERS = false;                     // true/false - play folders playlist in alphabetical or random order
-//                                            
+//
 
 volatile bool next_tune = false;
 volatile bool play_next_folder = true;
@@ -54,7 +52,7 @@ uint32_t MODEL_TYPE = 0; //MOS6581 or MOS8580
 uint32_t FLAGS76 = 0;
 uint8_t ComputeMUSplayer = 0;
 uint8_t C64Compatible = 0;
-uint8_t LOW_RAM_uncompatible=0;
+uint8_t LOW_RAM_uncompatible = 0;
 uint16_t LOAD_ADDRESS = 0;
 uint32_t SUBTUNE_SPEED = 0;
 

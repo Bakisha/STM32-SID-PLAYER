@@ -12,7 +12,7 @@ uint32_t test_instructions = 1000;              // number of instructions to tes
 //autoconfigMultiplier();                       // calculate how long IRQ will last based on chosen microcontroller
 //benchmark();                                  // SID emulation + 6502 CPU emulation debug
 //FRAMEtest();                                  // calculate time of one emulated frame (SID emulation is ON)
-//LOGO();                                       // if available free bytes , it can be added to RAM_SIZE
+//HELP();                                       // if available free bytes , it can be added to RAM_SIZE
 
 
 
@@ -41,9 +41,7 @@ inline void CPU_test () {
 
 
 
-  debugPrintTXT   ("Microcontroller speed:               ");
-  debugPrintNUMBER(F_CPU / 1000000);
-  debugPrintTXTln (" MHz");
+  debugPrintTXT   ("Microcontroller speed:");  debugPrintNUMBER(uint32_t(F_CPU / 1000000));  debugPrintTXTln (" MHz");
   //debugPrintTXTln (" ");
   //debugPrintTXTln ("6502 emulation only:");
   //debugPrintTXT   ("Instructions executed:               ");
@@ -55,12 +53,11 @@ inline void CPU_test () {
   //debugPrintTXT   ("Emulated time passed:                ");
   //debugPrintNUMBER(Emu_uS);
   //debugPrintTXTln (" uS");
-  debugPrintTXT   ("Emulated 6502 speed:                 ");
-  debugPrintNUMBER(uint32_t((100 * Emu_uS) / Real_uS ));
-  debugPrintTXTln ("%");
-  debugPrintTXT   ("Average time per 6502 instruction:   ");
+  debugPrintTXT   ("Emulated 6502 speed:");  debugPrintNUMBER(uint32_t((100 * Emu_uS) / Real_uS ));  debugPrintTXTln ("%");
+  debugPrintTXT   ("6502 instruction:   ");
   debugPrintNUMBER(CPU_uS );
   debugPrintTXTln (" uS");
+  
 
 }
 
@@ -82,25 +79,25 @@ inline void autoconfigMultiplier () {
     Real_uS_end = micros();
     Real_uS = Real_uS_end - Real_uS_start;
     SID_uS = Real_uS / test_instructions;
-    estimated_frame_time = ((20000 /* ms */  / multiplier) * (SID_uS + 0 /* irq overhead */ )) + (500 /* estimated irq instructions */ * (CPU_uS + 0 /* estimated main loop overhead in uS */  )); // estimated around 500 instruction per frame (20mS) should be enough for calculations
+    estimated_frame_time = ((20000 /* ms */  / multiplier) * (SID_uS + 2 /* irq overhead */ )) + (500 /* estimated irq instructions */ * (CPU_uS + 0 /* estimated main loop overhead in uS */  )); // estimated around 500 instruction per frame (20mS) should be enough for calculations
     if (estimated_frame_time < 13000) { // worst case: 13000 for bluepill at 48MHz, O0 (smallest code) optimatization (best case is same as emulated uS)
       best_multiplier = multiplier ;
     }
     // enable this if raw values are needed during calculations (in case to manualy find perfect <multiplier> value )
-   /*
-        debugPrintTXTln("Testing SID Emulator");
-        debugPrintTXT("SID emulation: ");
-        debugPrintNUMBER(Real_uS);
-        debugPrintTXT(" uS passed. ");
-        debugPrintTXT("Around: ");
-        debugPrintNUMBER(SID_uS);
-        debugPrintTXT(" uS per irq, ");
-        debugPrintTXT("at multiplier: ");
-        debugPrintNUMBER(multiplier);
-        debugPrintTXT(". Estimated emulated IRQ time: ");
-        debugPrintNUMBER(estimated_frame_time);
-        debugPrintTXTln("uS.");
-   */
+    /*
+         debugPrintTXTln("Testing SID Emulator");
+         debugPrintTXT("SID emulation: ");
+         debugPrintNUMBER(Real_uS);
+         debugPrintTXT(" uS passed. ");
+         debugPrintTXT("Around: ");
+         debugPrintNUMBER(SID_uS);
+         debugPrintTXT(" uS per irq, ");
+         debugPrintTXT("at multiplier: ");
+         debugPrintNUMBER(multiplier);
+         debugPrintTXT(". Estimated emulated IRQ time: ");
+         debugPrintNUMBER(estimated_frame_time);
+         debugPrintTXTln("uS.");
+    */
     multiplier++;
     if (multiplier > 248) {
       multiplier = 248;
@@ -109,17 +106,9 @@ inline void autoconfigMultiplier () {
   }
   multiplier = best_multiplier; // or edit manually here
 
-  //debugPrintTXTln  (" ");
-  //debugPrintTXTln  ("SID emulation only:");
-  debugPrintTXT    ("SID emulator only IRQ time:          ");
-  debugPrintNUMBER (SID_uS);
-  debugPrintTXTln  (" uS ");
-  debugPrintTXT    ("Calculated optimal multiplier:       ");
-  debugPrintNUMBER (multiplier);
-  debugPrintTXTln  (" (uS) ");
-  debugPrintTXT    ("Samplerate:                          ");
-  debugPrintNUMBER (uint32_t(1000000 / multiplier));
-  debugPrintTXTln  (" Hz ");
+  debugPrintTXT    ("SID emulator IRQ:  ");  debugPrintNUMBER (SID_uS);  debugPrintTXTln  (" uS ");
+  debugPrintTXT    ("Optimal multiplier:");  debugPrintNUMBER (multiplier);  debugPrintTXTln  (" (uS) ");
+  debugPrintTXT    ("Samplerate:        ");  debugPrintNUMBER (uint32_t(1000000 / multiplier));  debugPrintTXTln  (" Hz ");
 
   if (multiplier < 12) {
     period = multiplier;
@@ -127,6 +116,7 @@ inline void autoconfigMultiplier () {
   else {
     period = 4; // for now, , maybe i'll leave at starting value (but it must be less then multiplier)
   }
+  
 }
 
 inline void FRAMEtest () {
@@ -152,20 +142,14 @@ inline void FRAMEtest () {
 
   Real_uS_end = micros();
   Real_uS = Real_uS_end - Real_uS_start;
+
   debugPrintTXTln  ("");
   debugPrintTXTln  ("Frame Test");
-  debugPrintTXT    ("Instructions executed:               ");
-  debugPrintNUMBER (instructions);
-  debugPrintTXTln  ("");
-  debugPrintTXT    ("Frame time (real):                   ");
-  debugPrintNUMBER (Real_uS);
-  debugPrintTXTln  ("uS ");
-  debugPrintTXT    ("Frame time (emulated):               ");
-  debugPrintNUMBER (Emu_uS);
-  debugPrintTXTln  ("uS ");
-  debugPrintTXT    ("Emulated frame speed:                ");
-  debugPrintNUMBER (uint32_t((100 * Emu_uS) / Real_uS ));
-  debugPrintTXTln  ("%");
+  debugPrintTXT    ("Instructions executed: ");  debugPrintNUMBER (instructions);  debugPrintTXTln  ("");
+  debugPrintTXT    ("Frame time (real):     ");  debugPrintNUMBER (uint32_t(Real_uS));  debugPrintTXTln  ("uS ");
+  debugPrintTXT    ("Frame time (emulated): ");  debugPrintNUMBER (uint32_t(Emu_uS));  debugPrintTXTln  ("uS ");
+  debugPrintTXT    ("Emulated frame speed:  ");  debugPrintNUMBER (uint32_t((100 * Emu_uS) / Real_uS ));  debugPrintTXTln  ("%");
   Emu_uS = 0;
   Real_uS = 0;
+  
 }
