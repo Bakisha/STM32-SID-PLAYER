@@ -138,11 +138,11 @@ void loop() {
           tune_play_counter = 0;
 
           if (SID_current_tune == SID_number_of_tunes) {
-            SID_current_tune = 1; // SID_current_tune - SID_number_of_tunes;
+            SID_current_tune = 0; // SID_current_tune - SID_number_of_tunes;
           }
           SID_current_tune = SID_current_tune + 1;
 
-          if (SID_current_tune >= SID_default_tune) { // loop finished
+          if (SID_current_tune == SID_default_tune) { // loop finished
             load_next_file = true;
             try_again = true;
             play_next_tune = false;
