@@ -138,7 +138,7 @@ void loop() {
           tune_play_counter = 0;
 
           if (SID_current_tune == SID_number_of_tunes) {
-            SID_current_tune = 0; // SID_current_tune - SID_number_of_tunes;
+            SID_current_tune = 1; // SID_current_tune - SID_number_of_tunes;
           }
           SID_current_tune = SID_current_tune + 1;
 
