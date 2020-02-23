@@ -26,6 +26,6 @@
 
  If <period> is 1 , AUDIO OUT can be connected to PA8 (no need for R1,C1 ). I don't think 1Mhz sample rate will be in hearing range
 
-Detailed information of how to control SID chip:
+Detailed information of how to control SID chip: 
 
 http://archive.6502.org/datasheets/mos_6581_sid.pdf
