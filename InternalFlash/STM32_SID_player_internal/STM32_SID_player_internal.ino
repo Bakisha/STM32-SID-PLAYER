@@ -1,6 +1,10 @@
-// Choose your board and upload method from menu 
-// Choose available RAM for emulator (depending of microcontroller) (currently set for BluePill - STM32F103C8, any core )
+// Choose your board and upload method from menu
+// Choose available RAM for emulator (depending of microcontroller) (currently set for BluePill - STM32F103C8, ROGER's or STM32Duino core )
 // it's strongly recommended to set optimatization on FASTEST -O3 (from tool menu of Arduino IDE).
+
+// STM32-SID-Player : https://github.com/Bakisha/STM32-SID-PLAYER
+// HVSC database: https://www.hvsc.c64.org/ (download and unpack to SD Card)
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -8,17 +12,17 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-#define RAM_SIZE 0x3000                   // set this value based on microcontroller used. maximum is 65535 bytes ( 0xFFFF HEX ) or available microcontoller's RAM
-#define TUNE_PLAY_TIME 180                // Can't implement songlenghts, manual values are needed (in seconds)//  TODO: try to determine silence in output, and skip to next tune
-uint8_t DEFAULT_SONG = 0;                 // 0 is automatic, from sid header, any other value is tune number
+#define RAM_SIZE 0x3000                 // ---> IMPORTANT! <--- Set this value based on microcontroller used. maximum is 65535 bytes ( 0xFFFF HEX ) or available microcontoller's RAM
+#define TUNE_PLAY_TIME 360              // Can't implement songlenghts, manual values are needed (in seconds)//  TODO: try to determine silence in output, and skip to next tune
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 //
-// copy-paste tune's path here (from tunes.h or HVSC.h)
+// copy-paste tune's path here (from 01_tunes.h or 01_HVSC.h)
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-#include"tunes/f103/Supremacy.h"
+#include"tunes/f103/Supremacy.h" 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -26,12 +30,25 @@ uint8_t DEFAULT_SONG = 0;                 // 0 is automatic, from sid header, an
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-#define USE_SERIAL                                 //       for debugging info on Serial , uncomment if it's needed
-#define USE_SERIAL1                                //       for debugging info on Serial1, uncomment if it's needed
+#define AUDIO_OUT       PA8                 // can't be changed, this is just reminder 
 
-#define BUTTON_1        PB0                        // can be any pin , it works without button, it will skip to next tune when timed out
+#define USE_SERIAL                          // for debugging info on Serial (usually USB Serial), uncomment if it's needed
+//#define USE_SERIAL1                         // for debugging info on Serial1 (usually on PA9/PA10), uncomment if it's needed
+#define SERIAL_SPEED 9600                   // Speed of serial connection
 
-#define AUDIO_OUT       PA8                        // can't be changed, this is just reminder
+
+
+
+#define BUTTON_1        PB0                 // can be any pin, but must exist. Multiple functions:
+//                                             - 1 short click  - play next tune
+//                                             - 2 short clicks - play next tune
+//                                             - 3 short clicks - play next tune
+//                                             - 4 short clicks - show HELP (on any output defined)
+//                                             - 5 short clicks - show info about sid file (on any output defined)
+//
+//
+//                                             - button holding - play tune as fast as possible (fast forward)
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -68,20 +85,38 @@ uint8_t DEFAULT_SONG = 0;                 // 0 is automatic, from sid header, an
 #define USE_CHANNEL_3                     // 
 
 
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Don't change stuff bellow
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#if defined(USE_HAL_DRIVER)
+#define USE_STM32duino_CORE
+//                                        Official ST cores. Support for multiple line of MPU
+//                                        link: https://github.com/stm32duino/Arduino_Core_STM32
+//                                        Set in preferences: https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json and search stm32 in board manager.
+//                                        Choose stm32 cores by ST Microelectronics. Select your CPU from tools menu
 
-#ifdef USE_HAL_DRIVER // Official ST cores. Support for multiple line of MPU
-#define USE_STM32duino_CORE //  Set in preferences: https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json and search stm32 in board manager. Choose stm32 cores by ST Microelectronics. Select your CPU from tools menu)
+
+#elif defined(__STM32F1__)
+#define USE_ROGER_CORE
+//                                        Most of stuff for blue pill is made for this core
+//                                        link: https://github.com/rogerclarkmelbourne/Arduino_STM32
+//                                        Set in preferences: http://dan.drown.org/stm32duino/package_STM32duino_index.json and search stm32F1 in board manager.
+//                                        Choose STM32F1xx core (NOTE: Only STM32F1 works)
+#elif defined(AVR)
+//                                        Must test this some day with Arduino MEGA
+//
+#error "Unsupported core - will try someday when i learn to setup interrupts and pwm on pins, without need to memorize TTROA, DDROB or DDWhateva"
 #else
-#define USE_ROGER_CORE //  Set in preferences: http://dan.drown.org/stm32duino/package_STM32duino_index.json and search stm32F1 in board manager. Choose STM32F1xx core (NOTE: Only STM32F1 works)
+#error "Unknown or unsupported core. Maybe even both"
 #endif
 
-#include "SID.h"
-#include "6502.h"
+
+#include "xx_RAM.h"
+#include "xx_SID.h"
+#include "xx_6502.h"
 
 // INFO:
 
@@ -95,7 +130,7 @@ uint8_t DEFAULT_SONG = 0;                 // 0 is automatic, from sid header, an
 // I had tried to make it as much as posible to be portable for other microcontrollers
 // My choise of STM32F103C8 is only because of it's price
 // in bluepill's RAM, player is at 0x300, .sid file data is at 0x400 (if microcontrollers RAM is less then end of memory address of sid file, otherwise file data is in it's original memory address)
-// tunes that work with it are in /music/f103 subfolder
+// tunes that work with it are in /tunes/f103/ subfolder
 
 
 // STM32F401CC board:
@@ -105,6 +140,9 @@ uint8_t DEFAULT_SONG = 0;                 // 0 is automatic, from sid header, an
 
 // STM32F411CC board:
 // Next in line of cheap microcontroller boards. Full 64K of RAM for emulator. (I personally overclocked mine to 110MHz, no USB serial, but Serial on PA9/PA10 works fine)
+
+
+
 
 
 // SCHEMATICS:
