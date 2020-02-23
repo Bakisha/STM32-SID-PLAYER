@@ -14,7 +14,7 @@ inline  uint8_t read6502(uint16_t address) {
     JSR1003 = 1; // if it's loading <20-03-10> (example: JSR $1003) value from sid_play routine, it is time for fake VIC-II irq signal
   }
   if ((address >= 0xD400) && (address < 0xD420)) {
-    // PB13_HIGH;
+   
     STAD4XX = 1; // sid read
     return_value = SID[address - 0xD400]; // TODO: make it unreadable //   SID
   }
@@ -39,8 +39,19 @@ inline  uint8_t read6502(uint16_t address) {
 
   if ( address < (0x400) ) return_value = PEEK (address) ; // zero page, stack, player, screen RAM
 
+//CIA timer
+  if ( address == 0xdc04 )  {
+  return_value = CIA_DC04;
+}
+if ( address == 0xdc05 )  {
+  return_value = CIA_DC05;
+}
 
-  return return_value;
+
+
+
+
+return return_value;
 
 }
 
@@ -51,7 +62,7 @@ inline void write6502(uint16_t address, uint8_t value) {
 
   if ((address >= 0xD400) & (address < 0xD420)) { // writing to sid - assagn values for interrupt
     //STAD4XX = 1; // SID write signal for IRQ
-    // PB12_HIGH;
+
     // SID MAGIC
     access_adress = (address - 0xD400);
     SID[ (access_adress)] = value; //  SID
@@ -281,7 +292,17 @@ inline void write6502(uint16_t address, uint8_t value) {
   } // LOW_RAM
 
 
-  //PB13_LOW;
+ //CIA timer
+  if ( address == 0xdc04 )  {
+ CIA_DC04=value;
+}
+if ( address == 0xdc05 )  {
+  CIA_DC05=value;
+}
+if (CIA_DC05>0) { // set song speed only when Hi value of CIA timer is greater then 0
+  set_tune_speed ();
+}
+
 }
 
 
@@ -296,6 +317,10 @@ inline void reset6502() {
   y = 0;
   sp = 0xFD;
   cpustatus |= FLAG_CONSTANT;
+
+  CIA_DC04 = 0;
+  CIA_DC05 = 0;
+
 
 }
 

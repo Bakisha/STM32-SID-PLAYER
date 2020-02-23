@@ -2,8 +2,8 @@
 // Choose available RAM for emulator (depending of microcontroller) (currently set for BluePill - STM32F103C8, ROGER's or STM32Duino core )
 // it's strongly recommended to set optimatization on FASTEST -O3 (from tool menu of Arduino IDE).
 
-// STM32-SID-Player : https://github.com/Bakisha/STM32-SID-PLAYER
-// HVSC database: https://www.hvsc.c64.org/ (download and unpack to SD Card)
+//                                                  STM32-SID-Player:     https://github.com/Bakisha/STM32-SID-PLAYER
+//                                                  HVSC database:        https://www.hvsc.c64.org/downloads (download and unpack to SD Card)
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -36,13 +36,14 @@ const char * HVSC = "HVSC" ;                   // ---> IMPORTANT! <---  name of 
 //                                                    When Random play is enabled, must manual switch between playlists
 
 
-#define NUMBER_OF_FAVORITE_FOLDERS 29             // set number of folder for playlist. Must have at least 1.
+#define NUMBER_OF_FAVORITE_FOLDERS 30             // set number of folder for playlist. Must have at least 1.
 
 
 const char * HVSC_FAVORITES                       //  set favorite directories paths (relative to main HVSC folder) with sid files in it
 [NUMBER_OF_FAVORITE_FOLDERS + 1] =
 {
-  "/" ,     // just a loop check
+  "/",
+  "MUSICIANS/P/Page_Jason/", // lot of multi-speed tunes (CIA speed test)
   "MUSICIANS/D/Dunn_David/",
   "MUSICIANS/T/Tel_Jeroen/",
   "MUSICIANS/R/Rowlands_Steve/",
@@ -166,8 +167,9 @@ bool RANDOM_FOLDERS = false;                      // - play folders playlist in 
 #error "Unknown or unsupported core. Maybe even both"
 #endif
 
-#include "xx_SID.h"
+
 #include "xx_RAM.h"
+#include "xx_SID.h"
 #include "xx_6502.h"
 
 
@@ -219,7 +221,7 @@ bool RANDOM_FOLDERS = false;                      // - play folders playlist in 
 
   If period is 1 , there is no need for R1 and C1.
 
-  Make sure right board is selected in Arduino IDE, and uncomment line depending of what core from board manager is used.
+ 
 
   HAVE FUN :-)
 

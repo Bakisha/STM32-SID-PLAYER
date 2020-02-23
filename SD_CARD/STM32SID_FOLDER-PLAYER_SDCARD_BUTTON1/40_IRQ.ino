@@ -549,6 +549,7 @@ void irq_handler(void) { //
           LFSR15_comparator_value_3 = ADSR_LFSR15[ADSR_Attack_3];
         }
         break;
+
     }
 
     // Increase LFSR15 counter for ADSR (scaled to match)

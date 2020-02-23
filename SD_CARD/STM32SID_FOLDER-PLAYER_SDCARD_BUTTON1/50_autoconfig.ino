@@ -40,7 +40,7 @@ inline void CPU_test () {
   CPU_uS = Real_uS / test_instructions;
 
 
-
+  debugPrintTXTln ("");
   debugPrintTXT   ("Microcontroller speed:");  debugPrintNUMBER(uint32_t(F_CPU / 1000000));  debugPrintTXTln (" MHz");
   //debugPrintTXTln (" ");
   //debugPrintTXTln ("6502 emulation only:");
@@ -57,7 +57,7 @@ inline void CPU_test () {
   debugPrintTXT   ("6502 instruction:   ");
   debugPrintNUMBER(CPU_uS );
   debugPrintTXTln (" uS");
-  
+
 
 }
 
@@ -116,7 +116,7 @@ inline void autoconfigMultiplier () {
   else {
     period = 4; // for now, , maybe i'll leave at starting value (but it must be less then multiplier)
   }
-  
+
 }
 
 inline void FRAMEtest () {

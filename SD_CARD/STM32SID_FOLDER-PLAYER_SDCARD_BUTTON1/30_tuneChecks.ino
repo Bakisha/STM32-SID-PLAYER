@@ -21,7 +21,13 @@ inline void set_tune_speed () { // set tune speed best on IRQ_TYPE_PER_TUNE and 
       break;
 
     case 1: // 001 // CIA - UNKNOWN
-      SID_speed = 16667;
+      if (CIA_DC05 > 0) {
+        SID_speed = (CIA_DC05 << 8) + CIA_DC04;
+      }
+      else {
+        SID_speed = 16667;
+      }
+
       break;
 
     case 2: // 010 // VBI - PAL
@@ -29,7 +35,13 @@ inline void set_tune_speed () { // set tune speed best on IRQ_TYPE_PER_TUNE and 
       break;
 
     case 3: // 011 // CIA - PAL
-      SID_speed = 16667;
+      if (CIA_DC05 > 0) {
+        SID_speed = (CIA_DC05 << 8) + CIA_DC04;
+      }
+      else {
+        SID_speed = 16667;
+      }
+
       break;
 
     case 4: // 100 // VBI - NTSC
@@ -37,7 +49,13 @@ inline void set_tune_speed () { // set tune speed best on IRQ_TYPE_PER_TUNE and 
       break;
 
     case 5: // 101 // CIA - NTSC
-      SID_speed = 17095;
+      if (CIA_DC05 > 0) {
+        SID_speed = (CIA_DC05 << 8) + CIA_DC04;
+      }
+      else {
+        SID_speed = 17095;
+      }
+
       break;
 
     case 6: // 110 // VBI - PAL and NTSC
@@ -45,7 +63,13 @@ inline void set_tune_speed () { // set tune speed best on IRQ_TYPE_PER_TUNE and 
       break;
 
     case 7: // 111 // CIA - PAL and NTSC
-      SID_speed = 16667; // assume it's pal cia
+      if (CIA_DC05 > 0) {
+        SID_speed = (CIA_DC05 << 8) + CIA_DC04;
+      }
+      else {
+        SID_speed = 16667; // assume it's pal cia
+      }
+
       break;
 
 
@@ -118,7 +142,6 @@ inline bool Compatibility_check() {
   //  11 = PAL and NTSC.
   // used in combination with SUBTUNE_SPEED to set speed per tune
 
-  SUBTUNE_SPEED = (IRQ_TYPE_PER_TUNE >> SID_current_tune); // this need to be done per tune
 
   set_tune_speed(); // set SID_speed
 

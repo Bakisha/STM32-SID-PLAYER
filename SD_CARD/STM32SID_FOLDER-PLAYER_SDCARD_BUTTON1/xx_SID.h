@@ -19,12 +19,15 @@ uint8_t multiplier  ;//
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 const uint8_t magic_number = F_CPU / 1000000 ; // PWM resolution - number of cycles in 1 uS (PWM resolution = period * magic_number) // keep as same as speed of microcontroller, in Mhz
-// at 72MHz there is 72 clock "ticks" in 1uS that drives counter of Timer1. It works with 128MHZ bluepill overclocked (value is 128 then... DUH). It also works underclocked at 48MHz. (Choose speed and set value before compiling)
+// at 72MHz there is 72 clock "ticks" in 1uS that drives counter of Timer1. It works with 128MHZ bluepill overclocked. It also works underclocked at 48MHz.
 // STM32duino boards have this as CYCLES_PER_MICROSECOND
 // STM32 boards have this as (F_CPU / 1000000)
 // TODO: It's a 8bit number, so maximum clock is 255. TODO: See if it brake stuff if it's 16bit number.
 
 uint32_t SID_data_size = 0;
+
+uint8_t  CIA_DC04 = 0;
+uint8_t  CIA_DC05 = 0;
 
 uint16_t MagicID = 0;
 uint16_t VERSION = 0;

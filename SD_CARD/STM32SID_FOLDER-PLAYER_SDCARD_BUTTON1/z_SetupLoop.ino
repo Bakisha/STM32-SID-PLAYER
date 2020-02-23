@@ -44,7 +44,7 @@ void loop() {
 
   if ( (play_next_folder == false) & (load_next_file == true) & (try_again == true) ) {
 
-    fileLoader();        //in 10_SDcard.ino
+    Loader(); // in 10_SDcard.ino
 
   } // file loader
 
@@ -101,6 +101,11 @@ void loop() {
     // while (STAD4XX == 1) {}
     if (JSR1003 == 1) { // JSR1003 check (or jam)
       JSR1003 = 0;
+
+      checkButton1();
+
+      // only time when JSR1003=1 and VIC_irq_request=1 at this point, is when emulated frame is not executed fast enough (Real_us>SID_speed) (tune will play slower, or "streched")
+
       if (VIC_irq_request == 0) {
         ///////////////////////////////////////
         //
@@ -112,9 +117,8 @@ void loop() {
         // button check (once per frame)
         // // 0=idle;   1,2,3,4... = short clicks;    -1 = is_pressed;
 
-        digitalWrite(LED_BUILTIN, HIGH);
+        digitalWrite(LED_BUILTIN, LOW); // the bright it is, the better. If it's mostly off, emulation is not fast enough for current tune speed
 
-        checkButton1();
 
         /*
                 // enable this for fun with Arduino IDE's serial plotter :-)
@@ -133,12 +137,12 @@ void loop() {
         */
 
         /////////////////////////////////////////////////
-        // play next tune check (once per frame)
-        if (play_next_tune == true) { // changing subutune
+        // play next tune check (once per frame - tune timed out or button press)
+        if (play_next_tune == true) { // changing subtune
           tune_play_counter = 0;
 
           if (SID_current_tune == SID_number_of_tunes) {
-            SID_current_tune = 0; // SID_current_tune - SID_number_of_tunes;
+            SID_current_tune = 0;
           }
           SID_current_tune = SID_current_tune + 1;
 
@@ -165,7 +169,7 @@ void loop() {
         // wait untill interrupt say it's new frame
 
       }
-      digitalWrite(LED_BUILTIN, LOW);
+      digitalWrite(LED_BUILTIN, HIGH);
 
       VIC_irq_request = 0;
       instructions = 0;
