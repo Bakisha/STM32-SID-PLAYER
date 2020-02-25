@@ -5,7 +5,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-#include"Monty_on_the_Run.h"
+#include"Monty_on_the_Run.h"  // MUSICIANS\H\Hubbard_Rob\Monty_on_the_Run.sid
 
 #define GENEROUS  0; // set amount of uS per IRQ that generously will be given to your sketch (greater the number, your sketch will run faster, but sound quality will degrade )
 
@@ -13,7 +13,9 @@ volatile uint8_t Tune ; // in this global variable will be tune number currently
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 //
-// Your sketch now
+// Original sketch can be found as library example (only Roger's core) : https://github.com/cbm80amiga/Arduino_ST7735_Fast
+//
+// Special thanks for cbm80amiga, his source code was very inspirational. 
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
