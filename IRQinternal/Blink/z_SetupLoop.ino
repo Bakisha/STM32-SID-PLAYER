@@ -260,7 +260,7 @@ int32_t Volume_filtered = 0;
 int32_t Volume_filter_input = 0;
 int32_t Volume_filter_output = 0;
 
-uint32_t i , j , k , l ; // i run out of names for temporary variables
+uint32_t temporary_variable_i     ;
 
 uint8_t SID[] = {                  //  array that hold values of SID registers
   0,      // Freq_1_Lo                      - REG_0
@@ -1315,7 +1315,7 @@ const uint8_t MyROM[256] = {
 #define clearsign() cpustatus &= (~FLAG_SIGN)
 
 
-#define  saveaccum( n)  a = ((uint8_t)(n) & 0x00FF);
+#define  saveaccum( n)  ACCUMULATOR = ((uint8_t)(n) & 0x00FF);
 
 //flag calculation macros
 #define zerocalc( n)  if ((n) & 0x00FF) clearzero();  else setzero();
@@ -1341,17 +1341,17 @@ uint16_t  BASE_STACK    = 0x100;
 
 
 
-uint8_t  a = 0;
-uint8_t x = 0;
-uint8_t y = 0;
-uint8_t  sp = 0xFD;
+uint8_t  ACCUMULATOR = 0;
+uint8_t X_REGISTER = 0;
+uint8_t Y_REGISTER = 0;
+uint8_t  STACK_POINTER = 0xFD;
 uint8_t cpustatus;
 //helper variables
 uint32_t instructions = 0; //keep track of total instructions executed
 int32_t clockticks6502 = 0, clockgoal6502 = 0;
-uint16_t oldpc, ea, reladdr, value, result;
+uint16_t oldPROGRAM_COUNTER, ea, reladdr, value6502, result;
 uint8_t opcode, oldcpustatus, useaccum;
-uint16_t pc;
+uint16_t PROGRAM_COUNTER;
 // end 0f Blue6502 defines and variable declarations
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1481,7 +1481,7 @@ inline  uint8_t read6502(uint16_t address) {
 }
 
 
-inline void write6502(uint16_t address, uint8_t value) {
+inline void write6502(uint16_t address, uint8_t value6502) {
 
 
 
@@ -1490,7 +1490,7 @@ inline void write6502(uint16_t address, uint8_t value) {
 
     // SID MAGIC
     access_adress = (address - 0xD400);
-    SID[ (access_adress)] = value; //  SID
+    SID[ (access_adress)] = value6502; //  SID
 
 
     // disable if IRQ is transfering SID[] variable
@@ -1701,28 +1701,28 @@ inline void write6502(uint16_t address, uint8_t value) {
   if ( LOW_RAM == true ) {
     if ( (address >=  SID_load_start)   & (address <  SID_load_end ) ) {
       if ( 0x400 + address - SID_load_start < (RAM_SIZE )) { // write to memory only if it fits into RAM, rest is ignored.
-        POKE (0x400 + address - SID_load_start, value); // sid data memory space
+        POKE (0x400 + address - SID_load_start, value6502); // sid data memory space
       }
     }
 
-    if (address < 0x400) POKE (address, value); // zero page, stack, player and free ram
+    if (address < 0x400) POKE (address, value6502); // zero page, stack, player and free ram
   } // LOW_RAM
 
 
 
   if ( LOW_RAM == false ) {
     if (address <= (RAM_SIZE )) {
-      POKE (address, value); // for  memory space that is covered by RAM
+      POKE (address, value6502); // for  memory space that is covered by RAM
     }
   } // LOW_RAM
 
 
   //CIA timer
   if ( address == 0xdc04 )  {
-    CIA_DC04 = value;
+    CIA_DC04 = value6502;
   }
   if ( address == 0xdc05 )  {
-    CIA_DC05 = value;
+    CIA_DC05 = value6502;
   }
   if (CIA_DC05 > 0) { // set song speed only when Hi value of CIA timer is greater then 0
     set_tune_speed ();
@@ -1735,12 +1735,12 @@ inline void write6502(uint16_t address, uint8_t value) {
 
 inline void reset6502() {
 
-  pc = 0x0300;  // player is copied to RAM at 0x300
-  //pc = (uint16_t)read6502(0xFFFC) | ((uint16_t)read6502(0xFFFD) << 8); // reset vector not used
-  a = 0;
-  x = 0;
-  y = 0;
-  sp = 0xFD;
+  PROGRAM_COUNTER = 0x0300;  // player is copied to RAM at 0x300
+  //PROGRAM_COUNTER = (uint16_t)read6502(0xFFFC) | ((uint16_t)read6502(0xFFFD) << 8); // reset vector not used
+  ACCUMULATOR = 0;
+  X_REGISTER = 0;
+  Y_REGISTER = 0;
+  STACK_POINTER = 0xFD;
   cpustatus |= FLAG_CONSTANT;
 
   CIA_DC04 = 0;
@@ -1754,24 +1754,24 @@ inline void reset6502() {
 
 //a few general functions used by various other functions
 inline void push16(uint16_t pushval) {
-  write6502(BASE_STACK + sp, (pushval >> 8) & 0xFF);
-  write6502(BASE_STACK + ((sp - 1) & 0xFF), pushval & 0xFF);
-  sp -= 2;
+  write6502(BASE_STACK + STACK_POINTER, (pushval >> 8) & 0xFF);
+  write6502(BASE_STACK + ((STACK_POINTER - 1) & 0xFF), pushval & 0xFF);
+  STACK_POINTER -= 2;
 }
 
 inline void push8(uint8_t pushval) {
-  write6502(BASE_STACK + sp--, pushval);
+  write6502(BASE_STACK + STACK_POINTER--, pushval);
 }
 
 inline uint16_t pull16() {
 
-  temp16 = read6502(BASE_STACK + ((sp + 1) & 0xFF)) | (read6502(BASE_STACK + ((sp + 2) & 0xFF)) << 8);
-  sp += 2;
+  temp16 = read6502(BASE_STACK + ((STACK_POINTER + 1) & 0xFF)) | (read6502(BASE_STACK + ((STACK_POINTER + 2) & 0xFF)) << 8);
+  STACK_POINTER += 2;
   return (temp16);
 }
 
 inline uint8_t pull8() {
-  return (read6502(BASE_STACK + ++sp));
+  return (read6502(BASE_STACK + ++STACK_POINTER));
 }
 
 
@@ -1785,75 +1785,75 @@ inline void acc() { //accumulator
 }
 
 inline void imm() { //immediate
-  ea = pc++;
+  ea = PROGRAM_COUNTER++;
 }
 
 inline void zp() { //zero-page
-  ea = read6502(pc++);
+  ea = read6502(PROGRAM_COUNTER++);
 }
 
 inline void zpx() { //zero-page,X
-  ea = (read6502(pc++) + x) & 0xFF; //zero-page wraparound
+  ea = (read6502(PROGRAM_COUNTER++) + X_REGISTER) & 0xFF; //zero-page wraparound
 }
 
 inline void zpy() { //zero-page,Y
-  ea = (read6502(pc++) + y) & 0xFF; //zero-page wraparound
+  ea = (read6502(PROGRAM_COUNTER++) + Y_REGISTER) & 0xFF; //zero-page wraparound
 }
 
 inline void rel() { //relative for branch ops (8-bit immediate value, sign-extended)
-  reladdr = read6502(pc++);
+  reladdr = read6502(PROGRAM_COUNTER++);
   if (reladdr & 0x80) reladdr |= 0xFF00;
 }
 
 inline void abso() { //absolute
-  ea = read6502(pc) | (read6502(pc + 1) << 8);
-  pc += 2;
+  ea = read6502(PROGRAM_COUNTER) | (read6502(PROGRAM_COUNTER + 1) << 8);
+  PROGRAM_COUNTER += 2;
 }
 
 inline void absx() { //absolute,X
 
-  ea = (read6502(pc) | (read6502(pc + 1) << 8));
+  ea = (read6502(PROGRAM_COUNTER) | (read6502(PROGRAM_COUNTER + 1) << 8));
   startpage = ea & 0xFF00;
-  ea += x;
+  ea += X_REGISTER;
 
-  pc += 2;
+  PROGRAM_COUNTER += 2;
 }
 
 inline void absy() { //absolute,Y
 
-  ea = (read6502(pc) | (read6502(pc + 1) << 8));
+  ea = (read6502(PROGRAM_COUNTER) | (read6502(PROGRAM_COUNTER + 1) << 8));
   startpage = ea & 0xFF00;
-  ea += y;
+  ea += Y_REGISTER;
 
-  pc += 2;
+  PROGRAM_COUNTER += 2;
 }
 
 inline void ind() { //indirect
 
-  eahelp = read6502(pc) | (read6502(pc + 1) << 8);
+  eahelp = read6502(PROGRAM_COUNTER) | (read6502(PROGRAM_COUNTER + 1) << 8);
   eahelp2 = (eahelp & 0xFF00) | ((eahelp + 1) & 0x00FF); //replicate 6502 page-boundary wraparound bug
   ea = read6502(eahelp) | (read6502(eahelp2) << 8);
-  pc += 2;
+  PROGRAM_COUNTER += 2;
 }
 
 inline void indx() { // (indirect,X)
 
-  eahelp = ((read6502(pc++) + x) & 0xFF); //zero-page wraparound for table pointer
+  eahelp = ((read6502(PROGRAM_COUNTER++) + X_REGISTER) & 0xFF); //zero-page wraparound for table pointer
   ea = read6502(eahelp & 0x00FF) | (read6502((eahelp + 1) & 0x00FF) << 8);
 }
 
 inline void indy() { // (indirect),Y
 
-  eahelp = read6502(pc++);
+  eahelp = read6502(PROGRAM_COUNTER++);
   eahelp2 = (eahelp & 0xFF00) | ((eahelp + 1) & 0x00FF); //zero-page wraparound
   ea = read6502(eahelp) | (read6502(eahelp2) << 8);
   startpage = ea & 0xFF00;
-  ea += y;
+  ea += Y_REGISTER;
 
 }
 
-uint16_t getvalue() {
-  if (useaccum) return (a);
+uint16_t getvalue6502() {
+  if (useaccum) return (ACCUMULATOR);
   else return (read6502(ea));
 }
 
@@ -1862,27 +1862,27 @@ uint16_t getvalue16() {
 }
 
 inline void putvalue(uint16_t saveval) {
-  if (useaccum) a = (saveval & 0x00FF);
+  if (useaccum) ACCUMULATOR = (saveval & 0x00FF);
   else write6502(ea, (saveval & 0x00FF));
 }
 
 
 //instruction handler functions
 inline void adc() {
-  value = getvalue();
-  result = a + value + (cpustatus & FLAG_CARRY);
+  value6502 = getvalue6502();
+  result = ACCUMULATOR + value6502 + (cpustatus & FLAG_CARRY);
 
   carrycalc(result);
   zerocalc(result);
-  overflowcalc(result, a, value);
+  overflowcalc(result, ACCUMULATOR, value6502);
   signcalc(result);
   saveaccum(result);
 }
 
 
 inline void op_and() {
-  value = getvalue();
-  result = a & value;
+  value6502 = getvalue6502();
+  result = ACCUMULATOR & value6502;
 
   zerocalc(result);
   signcalc(result);
@@ -1891,8 +1891,8 @@ inline void op_and() {
 }
 
 inline void asl() {
-  value = getvalue();
-  result = value << 1;
+  value6502 = getvalue6502();
+  result = value6502 << 1;
 
   carrycalc(result);
   zerocalc(result);
@@ -1903,88 +1903,88 @@ inline void asl() {
 
 inline void bcc() {
   if ((cpustatus & FLAG_CARRY) == 0) {
-    oldpc = pc;
-    pc += reladdr;
-    if ((oldpc & 0xFF00) != (pc & 0xFF00)) clockticks6502 += 2; //check if jump crossed a page boundary
+    oldPROGRAM_COUNTER = PROGRAM_COUNTER;
+    PROGRAM_COUNTER += reladdr;
+    if ((oldPROGRAM_COUNTER & 0xFF00) != (PROGRAM_COUNTER & 0xFF00)) clockticks6502 += 2; //check if jump crossed a page boundary
     else clockticks6502++;
   }
 }
 
 inline void bcs() {
   if ((cpustatus & FLAG_CARRY) == FLAG_CARRY) {
-    oldpc = pc;
-    pc += reladdr;
-    if ((oldpc & 0xFF00) != (pc & 0xFF00)) clockticks6502 += 2; //check if jump crossed a page boundary
+    oldPROGRAM_COUNTER = PROGRAM_COUNTER;
+    PROGRAM_COUNTER += reladdr;
+    if ((oldPROGRAM_COUNTER & 0xFF00) != (PROGRAM_COUNTER & 0xFF00)) clockticks6502 += 2; //check if jump crossed a page boundary
     else clockticks6502++;
   }
 }
 
 inline void beq() {
   if ((cpustatus & FLAG_ZERO) == FLAG_ZERO) {
-    oldpc = pc;
-    pc += reladdr;
-    if ((oldpc & 0xFF00) != (pc & 0xFF00)) clockticks6502 += 2; //check if jump crossed a page boundary
+    oldPROGRAM_COUNTER = PROGRAM_COUNTER;
+    PROGRAM_COUNTER += reladdr;
+    if ((oldPROGRAM_COUNTER & 0xFF00) != (PROGRAM_COUNTER & 0xFF00)) clockticks6502 += 2; //check if jump crossed a page boundary
     else clockticks6502++;
   }
 }
 
 inline void op_bit() {
-  value = getvalue();
-  result = a & value;
+  value6502 = getvalue6502();
+  result = ACCUMULATOR & value6502;
 
   zerocalc(result);
-  cpustatus = (cpustatus & 0x3F) | (value & 0xC0);
+  cpustatus = (cpustatus & 0x3F) | (value6502 & 0xC0);
 }
 
 inline void bmi() {
   if ((cpustatus & FLAG_SIGN) == FLAG_SIGN) {
-    oldpc = pc;
-    pc += reladdr;
-    if ((oldpc & 0xFF00) != (pc & 0xFF00)) clockticks6502 += 2; //check if jump crossed a page boundary
+    oldPROGRAM_COUNTER = PROGRAM_COUNTER;
+    PROGRAM_COUNTER += reladdr;
+    if ((oldPROGRAM_COUNTER & 0xFF00) != (PROGRAM_COUNTER & 0xFF00)) clockticks6502 += 2; //check if jump crossed a page boundary
     else clockticks6502++;
   }
 }
 
 inline void bne() {
   if ((cpustatus & FLAG_ZERO) == 0) {
-    oldpc = pc;
-    pc += reladdr;
-    if ((oldpc & 0xFF00) != (pc & 0xFF00)) clockticks6502 += 2; //check if jump crossed a page boundary
+    oldPROGRAM_COUNTER = PROGRAM_COUNTER;
+    PROGRAM_COUNTER += reladdr;
+    if ((oldPROGRAM_COUNTER & 0xFF00) != (PROGRAM_COUNTER & 0xFF00)) clockticks6502 += 2; //check if jump crossed a page boundary
     else clockticks6502++;
   }
 }
 
 inline void bpl() {
   if ((cpustatus & FLAG_SIGN) == 0) {
-    oldpc = pc;
-    pc += reladdr;
-    if ((oldpc & 0xFF00) != (pc & 0xFF00)) clockticks6502 += 2; //check if jump crossed a page boundary
+    oldPROGRAM_COUNTER = PROGRAM_COUNTER;
+    PROGRAM_COUNTER += reladdr;
+    if ((oldPROGRAM_COUNTER & 0xFF00) != (PROGRAM_COUNTER & 0xFF00)) clockticks6502 += 2; //check if jump crossed a page boundary
     else clockticks6502++;
   }
 }
 
 inline void brk() {
-  pc++;
-  push16(pc); //push next instruction address onto stack
+  PROGRAM_COUNTER++;
+  push16(PROGRAM_COUNTER); //push next instruction address onto stack
   push8(cpustatus | FLAG_BREAK); //push CPU cpustatus to stack
   setinterrupt(); //set interrupt flag
-  pc = read6502(0xFFFE) | (read6502(0xFFFF) << 8);
+  PROGRAM_COUNTER = read6502(0xFFFE) | (read6502(0xFFFF) << 8);
 }
 
 inline void bvc() {
   if ((cpustatus & FLAG_OVERFLOW) == 0) {
-    oldpc = pc;
-    pc += reladdr;
-    if ((oldpc & 0xFF00) != (pc & 0xFF00)) clockticks6502 += 2; //check if jump crossed a page boundary
+    oldPROGRAM_COUNTER = PROGRAM_COUNTER;
+    PROGRAM_COUNTER += reladdr;
+    if ((oldPROGRAM_COUNTER & 0xFF00) != (PROGRAM_COUNTER & 0xFF00)) clockticks6502 += 2; //check if jump crossed a page boundary
     else clockticks6502++;
   }
 }
 
 inline void bvs() {
   if ((cpustatus & FLAG_OVERFLOW) == FLAG_OVERFLOW) {
-    oldpc = pc;
-    pc += reladdr;
-    if ((oldpc & 0xFF00) != (pc & 0xFF00)) clockticks6502 += 2; //check if jump crossed a page boundary
+    oldPROGRAM_COUNTER = PROGRAM_COUNTER;
+    PROGRAM_COUNTER += reladdr;
+    if ((oldPROGRAM_COUNTER & 0xFF00) != (PROGRAM_COUNTER & 0xFF00)) clockticks6502 += 2; //check if jump crossed a page boundary
     else clockticks6502++;
   }
 }
@@ -2006,41 +2006,41 @@ inline void clv() {
 }
 
 inline void cmp() {
-  value = getvalue();
-  result = a - value;
+  value6502 = getvalue6502();
+  result = ACCUMULATOR - value6502;
 
-  if (a >= (value & 0x00FF)) setcarry();
+  if (ACCUMULATOR >= (value6502 & 0x00FF)) setcarry();
   else clearcarry();
-  if (a == (value & 0x00FF)) setzero();
+  if (ACCUMULATOR == (value6502 & 0x00FF)) setzero();
   else clearzero();
   signcalc(result);
 }
 
 inline void cpx() {
-  value = getvalue();
-  result = x - value;
+  value6502 = getvalue6502();
+  result = X_REGISTER - value6502;
 
-  if (x >= (value & 0x00FF)) setcarry();
+  if (X_REGISTER >= (value6502 & 0x00FF)) setcarry();
   else clearcarry();
-  if (x == (value & 0x00FF)) setzero();
+  if (X_REGISTER == (value6502 & 0x00FF)) setzero();
   else clearzero();
   signcalc(result);
 }
 
 inline void cpy() {
-  value = getvalue();
-  result = y - value;
+  value6502 = getvalue6502();
+  result = Y_REGISTER - value6502;
 
-  if (y >= (value & 0x00FF)) setcarry();
+  if (Y_REGISTER >= (value6502 & 0x00FF)) setcarry();
   else clearcarry();
-  if (y == (value & 0x00FF)) setzero();
+  if (Y_REGISTER == (value6502 & 0x00FF)) setzero();
   else clearzero();
   signcalc(result);
 }
 
 inline void dec() {
-  value = getvalue();
-  result = value - 1;
+  value6502 = getvalue6502();
+  result = value6502 - 1;
 
   zerocalc(result);
   signcalc(result);
@@ -2049,22 +2049,22 @@ inline void dec() {
 }
 
 inline void dex() {
-  x--;
+  X_REGISTER--;
 
-  zerocalc(x);
-  signcalc(x);
+  zerocalc(X_REGISTER);
+  signcalc(X_REGISTER);
 }
 
 inline void dey() {
-  y--;
+  Y_REGISTER--;
 
-  zerocalc(y);
-  signcalc(y);
+  zerocalc(Y_REGISTER);
+  signcalc(Y_REGISTER);
 }
 
 inline void eor() {
-  value = getvalue();
-  result = a ^ value;
+  value6502 = getvalue6502();
+  result = ACCUMULATOR ^ value6502;
 
   zerocalc(result);
   signcalc(result);
@@ -2073,8 +2073,8 @@ inline void eor() {
 }
 
 inline void inc() {
-  value = getvalue();
-  result = value + 1;
+  value6502 = getvalue6502();
+  result = value6502 + 1;
 
   zerocalc(result);
   signcalc(result);
@@ -2083,57 +2083,57 @@ inline void inc() {
 }
 
 inline void inx() {
-  x++;
+  X_REGISTER++;
 
-  zerocalc(x);
-  signcalc(x);
+  zerocalc(X_REGISTER);
+  signcalc(X_REGISTER);
 }
 
 inline void iny() {
-  y++;
+  Y_REGISTER++;
 
-  zerocalc(y);
-  signcalc(y);
+  zerocalc(Y_REGISTER);
+  signcalc(Y_REGISTER);
 }
 
 inline void jmp() {
-  pc = ea;
+  PROGRAM_COUNTER = ea;
 }
 
 inline void jsr() {
-  push16(pc - 1);
-  pc = ea;
+  push16(PROGRAM_COUNTER - 1);
+  PROGRAM_COUNTER = ea;
 }
 
 inline void lda() {
-  value = getvalue();
-  a = (value & 0x00FF);
+  value6502 = getvalue6502();
+  ACCUMULATOR = (value6502 & 0x00FF);
 
-  zerocalc(a);
-  signcalc(a);
+  zerocalc(ACCUMULATOR);
+  signcalc(ACCUMULATOR);
 }
 
 inline void ldx() {
-  value = getvalue();
-  x = (value & 0x00FF);
+  value6502 = getvalue6502();
+  X_REGISTER = (value6502 & 0x00FF);
 
-  zerocalc(x);
-  signcalc(x);
+  zerocalc(X_REGISTER);
+  signcalc(X_REGISTER);
 }
 
 inline void ldy() {
-  value = getvalue();
-  y = (value & 0x00FF);
+  value6502 = getvalue6502();
+  Y_REGISTER = (value6502 & 0x00FF);
 
-  zerocalc(y);
-  signcalc(y);
+  zerocalc(Y_REGISTER);
+  signcalc(Y_REGISTER);
 }
 
 inline void lsr() {
-  value = getvalue();
-  result = value >> 1;
+  value6502 = getvalue6502();
+  result = value6502 >> 1;
 
-  if (value & 1) setcarry();
+  if (value6502 & 1) setcarry();
   else clearcarry();
   zerocalc(result);
   signcalc(result);
@@ -2145,8 +2145,8 @@ inline void nop() {
 }
 
 inline void ora() {
-  value = getvalue();
-  result = a | value;
+  value6502 = getvalue6502();
+  result = ACCUMULATOR | value6502;
 
   zerocalc(result);
   signcalc(result);
@@ -2155,7 +2155,7 @@ inline void ora() {
 }
 
 inline void pha() {
-  push8(a);
+  push8(ACCUMULATOR);
 }
 
 inline void php() {
@@ -2163,10 +2163,10 @@ inline void php() {
 }
 
 inline void pla() {
-  a = pull8();
+  ACCUMULATOR = pull8();
 
-  zerocalc(a);
-  signcalc(a);
+  zerocalc(ACCUMULATOR);
+  signcalc(ACCUMULATOR);
 }
 
 inline void plp() {
@@ -2174,8 +2174,8 @@ inline void plp() {
 }
 
 inline void rol() {
-  value = getvalue();
-  result = (value << 1) | (cpustatus & FLAG_CARRY);
+  value6502 = getvalue6502();
+  result = (value6502 << 1) | (cpustatus & FLAG_CARRY);
 
   carrycalc(result);
   zerocalc(result);
@@ -2185,10 +2185,10 @@ inline void rol() {
 }
 
 inline void ror() {
-  value = getvalue();
-  result = (value >> 1) | ((cpustatus & FLAG_CARRY) << 7);
+  value6502 = getvalue6502();
+  result = (value6502 >> 1) | ((cpustatus & FLAG_CARRY) << 7);
 
-  if (value & 1) setcarry();
+  if (value6502 & 1) setcarry();
   else clearcarry();
   zerocalc(result);
   signcalc(result);
@@ -2198,22 +2198,22 @@ inline void ror() {
 
 inline void rti() {
   cpustatus = pull8();
-  value = pull16();
-  pc = value;
+  value6502 = pull16();
+  PROGRAM_COUNTER = value6502;
 }
 
 inline void rts() {
-  value = pull16();
-  pc = value + 1;
+  value6502 = pull16();
+  PROGRAM_COUNTER = value6502 + 1;
 }
 
 inline void sbc() {
-  value = getvalue() ^ 0x00FF;
-  result = a + value + (cpustatus & FLAG_CARRY);
+  value6502 = getvalue6502() ^ 0x00FF;
+  result = ACCUMULATOR + value6502 + (cpustatus & FLAG_CARRY);
 
   carrycalc(result);
   zerocalc(result);
-  overflowcalc(result, a, value);
+  overflowcalc(result, ACCUMULATOR, value6502);
   signcalc(result);
 
 
@@ -2235,54 +2235,54 @@ inline void sei() {
 }
 
 inline void sta() {
-  putvalue(a);
+  putvalue(ACCUMULATOR);
 }
 
 inline void stx() {
-  putvalue(x);
+  putvalue(X_REGISTER);
 }
 
 inline void sty() {
-  putvalue(y);
+  putvalue(Y_REGISTER);
 }
 
 inline void tax() {
-  x = a;
+  X_REGISTER = ACCUMULATOR;
 
-  zerocalc(x);
-  signcalc(x);
+  zerocalc(X_REGISTER);
+  signcalc(X_REGISTER);
 }
 
 inline void tay() {
-  y = a;
+  Y_REGISTER = ACCUMULATOR;
 
-  zerocalc(y);
-  signcalc(y);
+  zerocalc(Y_REGISTER);
+  signcalc(Y_REGISTER);
 }
 
 inline void tsx() {
-  x = sp;
+  X_REGISTER = STACK_POINTER;
 
-  zerocalc(x);
-  signcalc(x);
+  zerocalc(X_REGISTER);
+  signcalc(X_REGISTER);
 }
 
 inline void txa() {
-  a = x;
+  ACCUMULATOR = X_REGISTER;
 
-  zerocalc(a);
-  signcalc(a);
+  zerocalc(ACCUMULATOR);
+  signcalc(ACCUMULATOR);
 }
 
 inline void txs() {
-  sp = x;
+  STACK_POINTER = X_REGISTER;
 }
 
 inline void tya() {
-  a = y;
+  ACCUMULATOR = Y_REGISTER;
 
-  zerocalc(a);
-  signcalc(a);
+  zerocalc(ACCUMULATOR);
+  signcalc(ACCUMULATOR);
 }
 
 //undocumented instructions
@@ -2295,7 +2295,7 @@ inline void lax() {
 inline void sax() {
   sta();
   stx();
-  putvalue(a & x);
+  putvalue(ACCUMULATOR & X_REGISTER);
 }
 
 inline void dcp() {
@@ -2343,7 +2343,7 @@ inline void exec6502() {
 
 
 
-  opcode = read6502(pc++);
+  opcode = read6502(PROGRAM_COUNTER++);
 
   cpustatus |= FLAG_CONSTANT;
 
@@ -2962,7 +2962,7 @@ inline void exec6502() {
 
 
 uint16_t getpc() {
-  return (pc);
+  return (PROGRAM_COUNTER);
 }
 
 uint8_t getop() {
@@ -3293,8 +3293,8 @@ inline bool Compatibility_check() {
 
 inline void player_setup() {
 
-  for ( i = 0; i < 0x80; i++) {
-    POKE (i + 0x0300, MyROM[i] ); //
+  for ( temporary_variable_i = 0; temporary_variable_i < 0x80; temporary_variable_i++) {
+    POKE (temporary_variable_i + 0x0300, MyROM[temporary_variable_i] ); //
   }
   POKE (0x0304, SID_current_tune - 1 );
   POKE (0x0307, (SID_init >> 8) & 0xff);
@@ -3423,7 +3423,7 @@ void irq_handler(void) { //
     // noise_1
     OSC_noise_1 = OSC_noise_1 + multiplier * OSC_1_HiLo;
     OSC_bit19_1 = OSC_noise_1 >> 19 ;
-    for (i = 0; i < OSC_bit19_1; i++) {
+    for (temporary_variable_i = 0; temporary_variable_i < OSC_bit19_1; temporary_variable_i++) {
       bit_0_1 = (( bitRead(pseudorandom_1, 22)   ) ^ ((bitRead(pseudorandom_1, 17 ) ) )  ) & 0x1;
       pseudorandom_1 = pseudorandom_1 << 1;
       //pseudorandom_1 = pseudorandom_1 & 0x7fffff;
@@ -3435,7 +3435,7 @@ void irq_handler(void) { //
     // noise_2
     OSC_noise_2 = OSC_noise_2 + multiplier * OSC_2_HiLo;
     OSC_bit19_2 = OSC_noise_2 >> 19 ;
-    for (i = 0; i < OSC_bit19_2; i++) {
+    for (temporary_variable_i = 0; temporary_variable_i < OSC_bit19_2; temporary_variable_i++) {
       bit_0_2 = (( bitRead(pseudorandom_2, 22)   ) ^ ((bitRead(pseudorandom_2, 17 ) ) )  ) & 0x1;
       pseudorandom_2 = pseudorandom_2 << 1;
       //pseudorandom_2 = pseudorandom_2 & 0x7fffff;
@@ -3446,7 +3446,7 @@ void irq_handler(void) { //
     // noise_3
     OSC_noise_3 = OSC_noise_3 + multiplier * OSC_3_HiLo;
     OSC_bit19_3 = OSC_noise_3 >> 19 ;
-    for (i = 0; i < OSC_bit19_3; i++) {
+    for (temporary_variable_i = 0; temporary_variable_i < OSC_bit19_3; temporary_variable_i++) {
       bit_0_3 = (( bitRead(pseudorandom_3, 22)   ) ^ ((bitRead(pseudorandom_3, 17 ) ) )  ) & 0x1;
       pseudorandom_3 = pseudorandom_3 << 1;
       //pseudorandom_3 = pseudorandom_3 & 0x7fffff;
