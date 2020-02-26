@@ -21,8 +21,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-#define RAM_SIZE 0x2000                 // ---> IMPORTANT! <--- Set this value based on microcontroller used. maximum is 65535 bytes ( 0xFFFF HEX ) or available microcontoller's RAM
-#define TUNE_PLAY_TIME 240              // Can't implement songlenghts, manual values are needed (in seconds)//  TODO: try to determine silence in output, and skip to next tune
+#define RAM_SIZE 0x2400                 // ---> IMPORTANT! <--- Set this value based on microcontroller used. maximum is 65535 bytes ( 0xFFFF HEX ) or available microcontoller's RAM
+#define TUNE_PLAY_TIME 350              // Can't implement songlenghts, manual values are needed (in seconds)//  TODO: try to determine silence in output, and skip to next tune
 
 
 
@@ -1349,7 +1349,7 @@ uint8_t cpustatus;
 //helper variables
 uint32_t instructions = 0; //keep track of total instructions executed
 int32_t clockticks6502 = 0, clockgoal6502 = 0;
-uint16_t oldPROGRAM_COUNTER, ea, reladdr, value6502, result;
+uint16_t oldPROGRAM_COUNTER, ea, reladdr, value6502, result6502;
 uint8_t opcode, oldcpustatus, useaccum;
 uint16_t PROGRAM_COUNTER;
 // end 0f Blue6502 defines and variable declarations
@@ -1870,35 +1870,35 @@ inline void putvalue(uint16_t saveval) {
 //instruction handler functions
 inline void adc() {
   value6502 = getvalue6502();
-  result = ACCUMULATOR + value6502 + (cpustatus & FLAG_CARRY);
+  result6502 = ACCUMULATOR + value6502 + (cpustatus & FLAG_CARRY);
 
-  carrycalc(result);
-  zerocalc(result);
-  overflowcalc(result, ACCUMULATOR, value6502);
-  signcalc(result);
-  saveaccum(result);
+  carrycalc(result6502);
+  zerocalc(result6502);
+  overflowcalc(result6502, ACCUMULATOR, value6502);
+  signcalc(result6502);
+  saveaccum(result6502);
 }
 
 
 inline void op_and() {
   value6502 = getvalue6502();
-  result = ACCUMULATOR & value6502;
+  result6502 = ACCUMULATOR & value6502;
 
-  zerocalc(result);
-  signcalc(result);
+  zerocalc(result6502);
+  signcalc(result6502);
 
-  saveaccum(result);
+  saveaccum(result6502);
 }
 
 inline void asl() {
   value6502 = getvalue6502();
-  result = value6502 << 1;
+  result6502 = value6502 << 1;
 
-  carrycalc(result);
-  zerocalc(result);
-  signcalc(result);
+  carrycalc(result6502);
+  zerocalc(result6502);
+  signcalc(result6502);
 
-  putvalue(result);
+  putvalue(result6502);
 }
 
 inline void bcc() {
@@ -1930,9 +1930,9 @@ inline void beq() {
 
 inline void op_bit() {
   value6502 = getvalue6502();
-  result = ACCUMULATOR & value6502;
+  result6502 = ACCUMULATOR & value6502;
 
-  zerocalc(result);
+  zerocalc(result6502);
   cpustatus = (cpustatus & 0x3F) | (value6502 & 0xC0);
 }
 
@@ -2007,45 +2007,45 @@ inline void clv() {
 
 inline void cmp() {
   value6502 = getvalue6502();
-  result = ACCUMULATOR - value6502;
+  result6502 = ACCUMULATOR - value6502;
 
   if (ACCUMULATOR >= (value6502 & 0x00FF)) setcarry();
   else clearcarry();
   if (ACCUMULATOR == (value6502 & 0x00FF)) setzero();
   else clearzero();
-  signcalc(result);
+  signcalc(result6502);
 }
 
 inline void cpx() {
   value6502 = getvalue6502();
-  result = X_REGISTER - value6502;
+  result6502 = X_REGISTER - value6502;
 
   if (X_REGISTER >= (value6502 & 0x00FF)) setcarry();
   else clearcarry();
   if (X_REGISTER == (value6502 & 0x00FF)) setzero();
   else clearzero();
-  signcalc(result);
+  signcalc(result6502);
 }
 
 inline void cpy() {
   value6502 = getvalue6502();
-  result = Y_REGISTER - value6502;
+  result6502 = Y_REGISTER - value6502;
 
   if (Y_REGISTER >= (value6502 & 0x00FF)) setcarry();
   else clearcarry();
   if (Y_REGISTER == (value6502 & 0x00FF)) setzero();
   else clearzero();
-  signcalc(result);
+  signcalc(result6502);
 }
 
 inline void dec() {
   value6502 = getvalue6502();
-  result = value6502 - 1;
+  result6502 = value6502 - 1;
 
-  zerocalc(result);
-  signcalc(result);
+  zerocalc(result6502);
+  signcalc(result6502);
 
-  putvalue(result);
+  putvalue(result6502);
 }
 
 inline void dex() {
@@ -2064,22 +2064,22 @@ inline void dey() {
 
 inline void eor() {
   value6502 = getvalue6502();
-  result = ACCUMULATOR ^ value6502;
+  result6502 = ACCUMULATOR ^ value6502;
 
-  zerocalc(result);
-  signcalc(result);
+  zerocalc(result6502);
+  signcalc(result6502);
 
-  saveaccum(result);
+  saveaccum(result6502);
 }
 
 inline void inc() {
   value6502 = getvalue6502();
-  result = value6502 + 1;
+  result6502 = value6502 + 1;
 
-  zerocalc(result);
-  signcalc(result);
+  zerocalc(result6502);
+  signcalc(result6502);
 
-  putvalue(result);
+  putvalue(result6502);
 }
 
 inline void inx() {
@@ -2131,14 +2131,14 @@ inline void ldy() {
 
 inline void lsr() {
   value6502 = getvalue6502();
-  result = value6502 >> 1;
+  result6502 = value6502 >> 1;
 
   if (value6502 & 1) setcarry();
   else clearcarry();
-  zerocalc(result);
-  signcalc(result);
+  zerocalc(result6502);
+  signcalc(result6502);
 
-  putvalue(result);
+  putvalue(result6502);
 }
 
 inline void nop() {
@@ -2146,12 +2146,12 @@ inline void nop() {
 
 inline void ora() {
   value6502 = getvalue6502();
-  result = ACCUMULATOR | value6502;
+  result6502 = ACCUMULATOR | value6502;
 
-  zerocalc(result);
-  signcalc(result);
+  zerocalc(result6502);
+  signcalc(result6502);
 
-  saveaccum(result);
+  saveaccum(result6502);
 }
 
 inline void pha() {
@@ -2175,25 +2175,25 @@ inline void plp() {
 
 inline void rol() {
   value6502 = getvalue6502();
-  result = (value6502 << 1) | (cpustatus & FLAG_CARRY);
+  result6502 = (value6502 << 1) | (cpustatus & FLAG_CARRY);
 
-  carrycalc(result);
-  zerocalc(result);
-  signcalc(result);
+  carrycalc(result6502);
+  zerocalc(result6502);
+  signcalc(result6502);
 
-  putvalue(result);
+  putvalue(result6502);
 }
 
 inline void ror() {
   value6502 = getvalue6502();
-  result = (value6502 >> 1) | ((cpustatus & FLAG_CARRY) << 7);
+  result6502 = (value6502 >> 1) | ((cpustatus & FLAG_CARRY) << 7);
 
   if (value6502 & 1) setcarry();
   else clearcarry();
-  zerocalc(result);
-  signcalc(result);
+  zerocalc(result6502);
+  signcalc(result6502);
 
-  putvalue(result);
+  putvalue(result6502);
 }
 
 inline void rti() {
@@ -2209,16 +2209,16 @@ inline void rts() {
 
 inline void sbc() {
   value6502 = getvalue6502() ^ 0x00FF;
-  result = ACCUMULATOR + value6502 + (cpustatus & FLAG_CARRY);
+  result6502 = ACCUMULATOR + value6502 + (cpustatus & FLAG_CARRY);
 
-  carrycalc(result);
-  zerocalc(result);
-  overflowcalc(result, ACCUMULATOR, value6502);
-  signcalc(result);
+  carrycalc(result6502);
+  zerocalc(result6502);
+  overflowcalc(result6502, ACCUMULATOR, value6502);
+  signcalc(result6502);
 
 
 
-  saveaccum(result);
+  saveaccum(result6502);
 }
 
 
