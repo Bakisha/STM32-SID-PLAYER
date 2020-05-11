@@ -34,6 +34,20 @@ void setup() {
 
 void loop() {
 
+  instructions = 0;
+  Emu_uS = 0;
+  VIC_irq_request = 0;
+  if (JAMMED) {
+    JAMMED = false;
+    debugPrintTXTln ("JAMMED          - loading next file ");
+    // add more line here depending on lcd's height
+  }
+  else {
+    JAMMED = false;
+    //debugPrintTXTln ("");
+
+  }
+
   if (play_next_folder == true) {
 
     ChangeFolder();       // in 10_SDcard.ino
@@ -64,19 +78,7 @@ void loop() {
   }
 
 
-  instructions = 0;
-  Emu_uS = 0;
-  VIC_irq_request = 0;
-  if (JAMMED) {
-    JAMMED = false;
-    debugPrintTXTln ("JAMMED          - loading next file ");
-    // add more line here depending on lcd's height
-  }
-  else {
-    JAMMED = false;
-    debugPrintTXTln ("");
 
-  }
   ///////////////////////////////////////
   // Player loop
   ///////////////////////////////////////
