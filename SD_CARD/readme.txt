@@ -25,26 +25,44 @@ reSID can be found at https://en.wikipedia.org/wiki/ReSID. This is not reSID por
 
 SCHEMATICS (not to scale) :
 
-.-------------------------------------.
-|                                     |
-| STM32FxxxXXxx                       |
-.----------------------------|-----|--.
- |G P   P P P                P    P|
- |N A   A A A                B    A|
- |D 1   5 6 7                0    8-----|R1|------|C2|----------|
- |  |   | | -- SD_MOSI       |                |                 --
- |  |   | ---- SD_MISO       |.               C                 || P1
- |  |   ------ SD_CLK         / SW            1                 ||<----------------| OUDIO OUT
- |  ---------- CS_SDARD      |                |                 --
- .---------------------------|----------------|-----------------|------------------| GND
+STM32F103C8/B - STM32F401CC - STM32F411CE :
+
+  .-------------------------------------.
+  |                                     |
+  | STM32FxxxXXxx                       |
+  .----------------------------|-----|--.
+  |G P   P P P                P    P|
+  |N A   A A A                B    A|
+  |D 1   5 6 7                0    8-----|R1|------|C2|----------|
+  |  |   | | -- SD_MOSI       |                |                 --
+  |  |   | ---- SD_MISO       |.               C                 || P1
+  |  |   ------ SD_CLK         / SW            1                 ||<----------------| OUDIO OUT
+  |  ---------- CS_SDARD      |                |                 --
+  .---------------------------|----------------|-----------------|------------------| GND
                                              GND
-R1 = 100-500 Ohm
-C1 = 100 nF
-C2 = 10 uF
-P1 = 10KOhm potentiometer
 
-If period is 1 , there is no need for R1 and C1.
 
-Make sure right board is selected in Arduino IDE, and uncomment line depending of what core from board manager is used.
+  STM32F407VET6 black board   :
+
+  .-------------------------------------.
+  |                                     |
+  | STM32F407VE                         |
+  .----------------------------|-----|--.
+  |G P   P P P                P    P|
+  |N B   B B B                E    A|
+  |D 7   3 4 5                3    8-----|R1|------|C2|----------|
+  |  |   | | -- SD_MOSI       |                |                 --
+  |  |   | ---- SD_MISO       |.               C                 || P1
+  |  |   ------ SD_CLK         / SW            1                 ||<----------------| OUDIO OUT
+  |  ---------- CS_SDARD      |                |                 --
+  .---------------------------|----------------|-----------------|------------------| GND
+                                             GND
+  R1 = 100-500 Ohm
+  C1 = 10-100 nF
+  C2 = 10 uF
+  P1 = 10KOhm potentiometer
+
+
+
 
 HAVE FUN :-)
