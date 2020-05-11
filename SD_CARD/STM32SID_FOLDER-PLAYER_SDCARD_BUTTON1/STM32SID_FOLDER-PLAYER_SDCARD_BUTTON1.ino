@@ -16,33 +16,26 @@
 #define TUNE_PLAY_TIME 180              // Can't implement songlenghts, manual values are needed (in seconds)//  TODO: try to determine silence in output, and skip to next tune
 
 
-
-
-
-
-
-
-
-
 /////////////////////////////////////////////////////////////////////////////////////////////
 //
 //           Player configuration:
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-const char * HVSC = "HVSC" ;                   // ---> IMPORTANT! <---  name of HVSC SID Collection folder on your SD Card ("HVSC", "C64Music", "/" or "" for root, etc"
+const char * const HVSC = "HVSC" ;                   // ---> IMPORTANT! <---  name of HVSC SID Collection folder on your SD Card ("HVSC", "C64Music", "/" or "" for root, etc"
 
-//#include "01_HVSC.h"                              // disabled for Bluepill. Can be enabled, but maximum RAM_SIZE is 0x1400 (5120 bytes) and O0 optimatization
+//#include "01_HVSC.h"                              // disabled for Bluepill. Can be enabled, but must be compiled with O0 optimatization (which will decrease sound quality)
 //                                                    When Random play is enabled, must manual switch between playlists
 
 
-#define NUMBER_OF_FAVORITE_FOLDERS 30             // set number of folder for playlist. Must have at least 1.
+#define NUMBER_OF_FAVORITE_FOLDERS 31             // set number of folder for playlist. Must have at least 1.
 
 
-const char * HVSC_FAVORITES                       //  set favorite directories paths (relative to main HVSC folder) with sid files in it
-[NUMBER_OF_FAVORITE_FOLDERS + 1] =
+const char * const HVSC_FAVORITES                       //  set favorite directories paths (relative to main HVSC folder) with sid files in it
+[] =
 {
-  "/",
+  "FAVORITES/",
+  "MUSICIANS/L/Linus/",
   "MUSICIANS/P/Page_Jason/", // lot of multi-speed tunes (CIA speed test)
   "MUSICIANS/D/Dunn_David/",
   "MUSICIANS/T/Tel_Jeroen/",
