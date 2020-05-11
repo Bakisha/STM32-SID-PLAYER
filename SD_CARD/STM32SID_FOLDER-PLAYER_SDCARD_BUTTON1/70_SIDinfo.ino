@@ -128,7 +128,7 @@ void  infoSID() {
   debugPrintTXT   ("Playlist:  "); debugPrintTXT   (SIDinfo_PLAYLIST); debugPrintTXTln ("");
   debugPrintTXT   ("Random   : "); debugPrintTXT   (SIDinfo_RANDOM); debugPrintTXTln ("");
   debugPrintTXT   ("Tune:      "); debugPrintNUMBER(SID_current_tune); debugPrintTXT   ("/"); debugPrintNUMBER(SID_number_of_tunes); debugPrintTXT   (" ("); debugPrintNUMBER(SID_default_tune); debugPrintTXT   (")") ; debugPrintTXTln ("");
- debugPrintTXTln ("");
+
 }
 
 
