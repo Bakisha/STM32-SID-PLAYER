@@ -25,7 +25,7 @@ inline void InitHardware() { // setup pins and IRQ
   Timer1.setPeriod(period);
 
   Timer2.setPrescaleFactor(1);
-  Timer2.setMode(TIMER_CH2, TIMER_OUTPUTCOMPARE);
+  Timer2.setMode(TIMER_CH2, TIMER_OUTPUT_COMPARE);
   Timer2.setPeriod(multiplier);
   Timer2.setCompare(TIMER_CH2, 1);
   Timer2.attachInterrupt(TIMER_CH2, irq_handler);
