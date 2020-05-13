@@ -1,20 +1,8 @@
-// Choose your board and upload method from menu
-// Choose available RAM for emulator (depending of microcontroller) (currently set for BluePill - STM32F103C8, ROGER's or STM32Duino core )
+// Choose your board and upload method from menu  (current setttings is for BluePill - STM32F103C8, ROGER's or STM32Duino core )
 // it's strongly recommended to set optimatization on FASTEST -O3 (from tool menu of Arduino IDE).
-
+//
 //                                                  STM32-SID-Player:     https://github.com/Bakisha/STM32-SID-PLAYER
 //                                                  HVSC database:        https://www.hvsc.c64.org/downloads (download and unpack to SD Card)
-
-
-////////////////////////////////////////////////////////////////////////////////////////////
-//
-//           emulator settings
-//
-//////////////////////////////////////////////////////////////////////////////////////////////
-
-#define RAM_SIZE 0x3000                 // ---> IMPORTANT! <--- Set this value based on microcontroller used. maximum is 65535 bytes ( 0xFFFF HEX ) or available microcontoller's RAM
-#define TUNE_PLAY_TIME 180              // Can't implement songlenghts, manual values are needed (in seconds)//  TODO: try to determine silence in output, and skip to next tune
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -22,18 +10,23 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
+
+#define TUNE_PLAY_TIME 215                           // Can't implement songlenghts, manual values are needed (in seconds)//  TODO: try to determine silence in output, and skip to next tune
+
 const char * const HVSC = "HVSC" ;                   // ---> IMPORTANT! <---  name of HVSC SID Collection folder on your SD Card ("HVSC", "C64Music", "/" or "" for root, etc"
 
-//#include "01_HVSC.h"                              // disabled for Bluepill. Can be enabled, but must be compiled with O0 optimatization (which will decrease sound quality)
+//#include "01_HVSC.h"                               // disabled for Bluepill. Can be enabled, but must be compiled with O0 optimatization (which will decrease sound quality)
 //                                                    When Random play is enabled, must manual switch between playlists
 
 
-#define NUMBER_OF_FAVORITE_FOLDERS 31             // set number of folder for playlist. Must have at least 1.
+#define NUMBER_OF_FAVORITE_FOLDERS 31                // set number of folder for playlist. Must have at least 1.
 
 
-const char * const HVSC_FAVORITES                       //  set favorite directories paths (relative to main HVSC folder) with sid files in it
+const char * const HVSC_FAVORITES                    //  set favorite directories paths (relative to main HVSC folder) with sid files in it
 [] =
 {
+  "MUSICIANS/G/Gregfeel/",
+  "MUSICIANS/B/Blues_Muz/Gallefoss_Glenn/",
   "FAVORITES/",
   "MUSICIANS/L/Linus/",
   "MUSICIANS/P/Page_Jason/", // lot of multi-speed tunes (CIA speed test)
@@ -44,13 +37,12 @@ const char * const HVSC_FAVORITES                       //  set favorite directo
   "MUSICIANS/D/Daglish_Ben/",
   "MUSICIANS/G/Gray_Matt/",
   "MUSICIANS/G/Gas_On/",
-  "MUSICIANS/B/Blues_Muz/Gallefoss_Glenn/",
   "MUSICIANS/B/Blues_Muz/" ,
   "MUSICIANS/S/Sequencer/",
   "DEMOS/G-L/",
   "MUSICIANS/G/Gray_Matt/",
   "MUSICIANS/F/Fanta/",
-  "MUSICIANS/T/The_Syndrom/",  
+  "MUSICIANS/T/The_Syndrom/",
   "MUSICIANS/L/LMan/",
   "MUSICIANS/L/Laxity/",
   "MUSICIANS/K/KB/",
@@ -60,7 +52,6 @@ const char * const HVSC_FAVORITES                       //  set favorite directo
   "MUSICIANS/H/Hubbard_Rob/",
   "MUSICIANS/B/Blues_Muz/",
   "MUSICIANS/P/PVCF/",
-  "MUSICIANS/G/Gregfeel/",
   "MUSICIANS/J/JCH/",
   "MUSICIANS/R/Rowlands_Steve/",
   "MUSICIANS/H/Huelsbeck_Chris/",
@@ -171,7 +162,7 @@ bool RANDOM_FOLDERS = false;                      // - play folders playlist in 
 
   SID chip (6581 and 8580) and 6502 CPU emulator, with audio output on pin PA8, for STM32 line of microcontrollers, compiled with Arduino IDE, uploaded with ST-LINK V2.
 
-  My personal project that i was having fun for some time now. Mainly done for STM32F103C8 (Blue Pill). Should work with other STM32 microcontrollers that Arduino IDE support. Tested also at STM32F401CCU6 dev board (and as i see, they all have same pin (PA8) for Timer1,channel1) and same pins for SPI.
+  My personal project that i was having fun for some time now. Mainly done for STM32F103C8 (Blue Pill). Should work with other STM32 microcontrollers that Arduino IDE support. Tested at STM32F401CCU6, STM32F411CEU6 and STM32F407VET6 dev boards (and as i see, they all have same pin (PA8) for Timer1,channel1), but not all have same pins for SPI.
 
   -Only single speed IRQ based sids can be played (PSID V2 sids, no digis, emulator is not fast enough).
 
@@ -192,12 +183,14 @@ bool RANDOM_FOLDERS = false;                      // - play folders playlist in 
   reSID can be found at https://en.wikipedia.org/wiki/ReSID. This is not reSID port, but i did used some parts of reSID code.
 
 
-  SCHEMATICS (not to scale) :
+SCHEMATICS (not to scale) :
+
+STM32F103C8/B - STM32F401CC - STM32F411CE :
 
   .-------------------------------------.
   |                                     |
   | STM32FxxxXXxx                       |
-  .----------------------------|-----|--.
+  .---------------------------|-----|---.
   |G P   P P P                P    P|
   |N A   A A A                B    A|
   |D 1   5 6 7                0    8-----|R1|------|C2|----------|
@@ -207,15 +200,31 @@ bool RANDOM_FOLDERS = false;                      // - play folders playlist in 
   |  ---------- CS_SDARD      |                |                 --
   .---------------------------|----------------|-----------------|------------------| GND
                                              GND
+
+
+  STM32F407VET6 black board   :
+
+  .-------------------------------------.
+  |                                     |
+  | STM32F407VE                         |
+  .---------------------------|-----|---.
+  |G P   P P P                P    P|
+  |N B   B B B                E    A|
+  |D 7   3 4 5                3    8-----|R1|------|C2|----------|
+  |  |   | | -- SD_MOSI       |                |                 --
+  |  |   | ---- SD_MISO       |.               C                 || P1
+  |  |   ------ SD_CLK         / SW            1                 ||<----------------| OUDIO OUT
+  |  ---------- CS_SDARD      |                |                 --
+  .---------------------------|----------------|-----------------|------------------| GND
+                                             GND
   R1 = 100-500 Ohm
-  C1 = 100 nF
+  C1 = 10-100 nF
   C2 = 10 uF
   P1 = 10KOhm potentiometer
 
-  If period is 1 , there is no need for R1 and C1.
 
- 
 
-  HAVE FUN :-)
+
+HAVE FUN :-)
 
 */

@@ -12,6 +12,10 @@ void setup() {
 
   pinMode(LED_BUILTIN, OUTPUT);
   randomSeed(millis());
+
+
+  AllocateRAM(); // in 02_RAM.ino
+
   debugInit(); // in 90_debug.ino
 
   autoconfigFinished = false; // do the autoconfig only once
