@@ -1,19 +1,10 @@
-// Choose your board and upload method from menu
-// Choose available RAM for emulator (depending of microcontroller) (currently set for BluePill - STM32F103C8, ROGER's or STM32Duino core )
+// Choose your board and upload method from menu  (current setttings is for BluePill - STM32F103C8, ROGER's or STM32Duino core )
 // it's strongly recommended to set optimatization on FASTEST -O3 (from tool menu of Arduino IDE).
-
-// STM32-SID-Player : https://github.com/Bakisha/STM32-SID-PLAYER
-// HVSC database: https://www.hvsc.c64.org/ (download and unpack to SD Card)
-
-
-////////////////////////////////////////////////////////////////////////////////////////////
 //
-//           emulator settings
-//
-//////////////////////////////////////////////////////////////////////////////////////////////
+//                                                  STM32-SID-Player:     https://github.com/Bakisha/STM32-SID-PLAYER
+//                                                  HVSC database:        https://www.hvsc.c64.org/downloads (download and unpack to SD Card)
 
-#define RAM_SIZE 0x3000                 // ---> IMPORTANT! <--- Set this value based on microcontroller used. maximum is 65535 bytes ( 0xFFFF HEX ) or available microcontoller's RAM
-#define TUNE_PLAY_TIME 360              // Can't implement songlenghts, manual values are needed (in seconds)//  TODO: try to determine silence in output, and skip to next tune
+
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -23,6 +14,9 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 #include"tunes/f103/Supremacy.h" 
+
+#define TUNE_PLAY_TIME 360              // Can't implement songlenghts, manual values are needed (in seconds)//  TODO: try to determine silence in output, and skip to next tune
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -145,25 +139,47 @@
 
 
 
-// SCHEMATICS:
+
+//SCHEMATICS (not to scale) :
+//
+//STM32F103C8/B - STM32F401CC - STM32F411CE :
+//
+//  .-------------------------------------.
+//  |                                     |
+//  | STM32FxxxXXxx                       |
+//  .---------------------------|-----|---.
+//  |G                          P    P|
+//  |N                          B    A|
+//  |D                          0    8-----|R1|------|C2|----------|
+//  |                           |                |                 --
+//  |                           |.               C                 || P1
+//  |                            / SW            1                 ||<----------------| OUDIO OUT
+//  |                           |                |                 --
+//  .---------------------------|----------------|-----------------|------------------| GND
+//                                             GND
 //
 //
-//    .-----------------.
-//    |                 |
-//    | STM32FxxxXXxx   |
-//    .------------|----.
-//     |G         P|
-//     |N         A|
-//     |D         8--R1----|------C2---------|
-//     |                   |                 --
-//     |                   C                 || P1
-//     |                   1                 ||<--------- OUDIO OUT
-//     |                   |                 --
-//     .-------------------|------------------|---------- GND
-//                        GND
-//    R1 = 100-500 Ohm
-//    C1 = 100 nF
-//    C2 = 10 uF
-//    P1 = 10KOhm potentiometer
+//  STM32F407VET6 black board   :
 //
-// If <period> is 1 , AUDIO OUT can be connected to PA8 (no need for R1,C1 ). I don't think 1Mhz sample rate will be in hearing range
+//  .-------------------------------------.
+//  |                                     |
+//  | STM32F407VE                         |
+//  .---------------------------|-----|---.
+//  |G                          P    P|
+//  |N                          E    A|
+//  |D                          3    8-----|R1|------|C2|----------|
+//  |                           |                |                 --
+//  |                           |.               C                 || P1
+//  |                            / SW            1                 ||<----------------| OUDIO OUT
+//  |                           |                |                 --
+//  .---------------------------|----------------|-----------------|------------------| GND
+//                                             GND
+//  R1 = 100-500 Ohm
+//  C1 = 10-100 nF
+//  C2 = 10 uF
+//  P1 = 10KOhm potentiometer
+//
+//
+//
+//
+//HAVE FUN :-)
