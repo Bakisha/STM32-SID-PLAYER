@@ -6,7 +6,7 @@ My personal project that i was having fun for some time now. Mainly done for STM
 
 -Only IRQ based sids can be played (no digis, emulator is not fast enough).
 
--Maximum size of sid is limited by microcontrollers RAM (16384 bytes for STM32F103C8T6, 62464 bytes for STM32F401CCU6).
+-Maximum size of sid is limited by microcontrollers RAM (14336 bytes for STM32F103C8T6, 62464 bytes for STM32F401CCU6).
 
 -Sid load address must be at $0400 or greater.
 
@@ -24,27 +24,46 @@ reSID can be found at https://en.wikipedia.org/wiki/ReSID. This is not reSID por
 
 Much more details are in the sketch.
 
-SCHEMATICS:
+SCHEMATICS (not to scale) :
 
-.-----------------.
-|                 |
-| STM32FxxxXXxx   |
-.------------|----.
- |G         P|
- |N         A|
- |D         8--R1----|------C2---------|
- |                   |                 --
- |                   C                 || P1
- |                   1                 ||<--------- OUDIO OUT
- |                   |                 --
- .-------------------|------------------|---------- GND
-                    GND
-R1 = 100-500 Ohm
-C1 = 100 nF
-C2 = 10 uF
-P1 = 10KOhm potentiometer
+STM32F103C8/B - STM32F401CC - STM32F411CE :
 
-If period is 1 , there is no need for R1 and C1.
+  .-------------------------------------.
+  |                                     |
+  | STM32FxxxXXxx                       |
+  .---------------------------|-----|---.
+  |G                          P    P|
+  |N                          B    A|
+  |D                          0    8-----|R1|------|C2|----------|
+  |                           |                |                 --
+  |                           |.               C                 || P1
+  |                            / SW            1                 ||<----------------| OUDIO OUT
+  |                           |                |                 --
+  .---------------------------|----------------|-----------------|------------------| GND
+                                             GND
+
+
+  STM32F407VET6 black board   :
+
+  .-------------------------------------.
+  |                                     |
+  | STM32F407VE                         |
+  .---------------------------|-----|---.
+  |G                          P    P|
+  |N                          E    A|
+  |D                          3    8-----|R1|------|C2|----------|
+  |                           |                |                 --
+  |                           |.               C                 || P1
+  |                            / SW            1                 ||<----------------| OUDIO OUT
+  |                           |                |                 --
+  .---------------------------|----------------|-----------------|------------------| GND
+                                             GND
+  R1 = 100-500 Ohm
+  C1 = 10-100 nF
+  C2 = 10 uF
+  P1 = 10KOhm potentiometer
+
+
 
 
 HAVE FUN :-)
