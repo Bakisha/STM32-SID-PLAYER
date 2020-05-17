@@ -2,7 +2,7 @@
 #ifndef NUMBER_OF_ALL_FOLDERS
 #define NUMBER_OF_ALL_FOLDERS 1746
 
-const char * const HVSC_ALL [] = {
+const char * const HVSC_ALL [NUMBER_OF_ALL_FOLDERS + 1] = {
   "DEMOS/0-9/",
   "DEMOS/A-F/",
   "DEMOS/Commodore/",

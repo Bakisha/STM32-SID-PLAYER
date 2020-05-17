@@ -1,10 +1,4 @@
-#ifdef USE_ROGER_CORE
 void irq_handler(void) { //
-#endif
-
-#ifdef USE_STM32duino_CORE
-  void irq_handler(HardwareTimer*) {
-#endif
 
     SetAUDIO(); // in 20_hardware.ino
 

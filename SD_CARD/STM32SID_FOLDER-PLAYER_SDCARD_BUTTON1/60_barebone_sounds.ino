@@ -203,4 +203,5 @@ inline void reset_SID() {
   FILTER_LP =  0;
   MASTER_VOLUME =   0;
 
+  delay(2);
 }
