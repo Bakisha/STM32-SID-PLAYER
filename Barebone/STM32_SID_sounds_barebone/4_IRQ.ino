@@ -1,10 +1,6 @@
-#ifdef USE_ROGER_CORE
-void irq_handler(void) { //
-#endif
 
-#ifdef USE_STM32duino_CORE
-  void irq_handler(HardwareTimer*) {
-#endif
+void irq_handler(void) { //
+
 
 
 
