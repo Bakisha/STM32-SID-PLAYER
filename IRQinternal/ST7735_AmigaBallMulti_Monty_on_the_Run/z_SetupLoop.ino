@@ -3310,13 +3310,9 @@ inline void player_setup() {
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-#ifdef USE_ROGER_CORE
-void irq_handler(void) { //
-#endif
 
-#ifdef USE_STM32duino_CORE
-  void irq_handler(HardwareTimer*) {
-#endif
+void irq_handler(void) { //
+
 
     SetAUDIO(); // in 20_hardware.ino
     //   digitalWrite(PB13, HIGH);
