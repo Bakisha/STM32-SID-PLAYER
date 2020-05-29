@@ -12,7 +12,7 @@ My personal project that i was having fun for some time now. Mainly done for STM
 
 -Filter emulation is far from real SID chip, but, for me, it sound enough "SID-ish".
 
--Plays sid from folder from SD CARD. Use button to switch to next tune/file.
+-Plays sid from folder from SD CARD. Use button to switch to next tune/file/folder.
 
 -SID tune database can be found at  https://www.hvsc.c64.org/
 
@@ -24,6 +24,9 @@ reSID can be found at https://en.wikipedia.org/wiki/ReSID. This is not reSID por
 
 
 SCHEMATICS (not to scale) :
+
+BUTTON 1:
+
 
 STM32F103C8/B - STM32F401CC - STM32F411CE :
 
@@ -61,6 +64,45 @@ STM32F103C8/B - STM32F401CC - STM32F411CE :
   C1 = 10-100 nF
   C2 = 10 uF
   P1 = 10KOhm potentiometer
+
+
+
+BUTTON 3:
+
+
+
+  STM32F103C8/B - STM32F401CC - STM32F411CE :
+
+  .------------------------------------------------------.
+  |                                                      |
+  | STM32FxxxXXxx                                        |
+  .-----------------------|------|------|----|-----------.
+  |G P   P P P            P      P      P   P|
+  |N A   A A A            B      B      B   A|
+  |D 1   5 6 7            0      1     10   8.------|R1|---+---|C2|----------|
+  |  |   | | -- SD_MOSI   |      |      |                  |                 --
+  |  |   | ---- SD_MISO   |.     |.     |.                 C                 || P1
+  |  |   ------ SD_CLK     /SW    / SW   /SW               1                 ||<----------------| OUDIO OUT
+  |  ---------- CS_SDARD  |      |      |                  |                 --
+  .-----------------------+------+------+------------------+-----------------|------------------| GND
+                                       GND
+
+
+  STM32F407VET6 black board   :
+
+  .------------------------------------------------------.
+  |                                                      |
+  | STM32F407VE                                          |
+  .-----------------------|------|------|----|-----------.
+  |G P   P P P            P      P      P   P|
+  |N B   B B B            B      B      B   A|
+  |D 7   3 4 5            0      1     10   8.------|R1|---+---|C2|----------|
+  |  |   | | -- SD_MOSI   |      |      |                  |                 --
+  |  |   | ---- SD_MISO   |.     |.     |.                 C                 || P1
+  |  |   ------ SD_CLK     /SW    / SW   /SW               1                 ||<----------------| OUDIO OUT
+  |  ---------- CS_SDARD  |      |      |                  |                 --
+  .-----------------------+------+------+------------------+-----------------|------------------| GND
+
 
 
 
