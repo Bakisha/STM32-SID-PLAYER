@@ -99,6 +99,7 @@ void checkButton1() {
 
     case 2:
       // two clicks - play next file
+      reset_SID();
       load_next_file = true;
       play_next_tune = false;
       try_again = true;
@@ -106,6 +107,7 @@ void checkButton1() {
 
     case 3:
       // 3 clicks - play next folder
+      reset_SID();
       play_next_folder = true;
       load_next_file = true;
       play_next_tune = false;
@@ -124,10 +126,11 @@ void checkButton1() {
 
     case 6:
       // 6 clicks - switch/reset between FAVORITE/ALL folder playlist.
+      reset_SID();
 #ifdef NUMBER_OF_ALL_FOLDERS // if HVSC folder is included
       favorites_finished =   !favorites_finished ;
 #endif
-      current_folder = 0;
+      current_folder = 0;      
       play_next_folder = true;
       load_next_file = true;
       play_next_tune = false;

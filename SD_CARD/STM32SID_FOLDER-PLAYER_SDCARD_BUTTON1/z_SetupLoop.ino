@@ -154,12 +154,12 @@ void loop() {
             play_next_tune = false;
           }
           else {
-
+            
+            reset_SID();
             set_tune_speed ();
             infoSID();
             play_next_tune = false; // set speed and play next tune
             reset6502();
-            reset_SID();
             POKE (0x0304, SID_current_tune - 1 ); // player's address for init tune
           }
         } // play next tune check
