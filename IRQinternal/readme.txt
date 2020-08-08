@@ -14,7 +14,7 @@
   //      - only music based on raster irq (PSID V2+) (play address must not be 0, will not work with custom music player inside .sid file)
   //      - multi-speed .sid files are not supported, ( emulation of 6502 is not fast enough to keep up ).
   //      - .sid load address must be at $0400 or greater
-  //      - total size of .sid file must be less then 8192 bytes
+  //      
   //
   // STM32F103C8
   // This project is purely for my own entertainment , so WITHOUT ANY WARRANTY!
