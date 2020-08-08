@@ -8,7 +8,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // Choose your board and upload method from menu
-// Choose available RAM for emulator (depending of microcontroller) (currently set for BluePill - STM32F103C8, ROGER's or STM32Duino core )
+
 // it's strongly recommended to set optimatization on FASTEST -O3 (from tool menu of Arduino IDE).
 
 // STM32-SID-Player : https://github.com/Bakisha/STM32-SID-PLAYER
@@ -21,7 +21,6 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-#define RAM_SIZE 0x2400                 // ---> IMPORTANT! <--- Set this value based on microcontroller used. maximum is 65535 bytes ( 0xFFFF HEX ) or available microcontoller's RAM
 #define TUNE_PLAY_TIME 350              // Can't implement songlenghts, manual values are needed (in seconds)//  TODO: try to determine silence in output, and skip to next tune
 
 
@@ -124,12 +123,24 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
+//  from SDfat library
+extern "C" char* sbrk(int incr);
+// free RAM (actually, free stack
+inline uint32_t FreeBytes() {
+  char top = 't';
+  return &top - reinterpret_cast<char*>(sbrk(0));
+}
+
+
+
+
 #if defined(SPI_RAM)
 // TODO
 #elif defined(PARALLEL_SRAM)
 // TODO
 #else
-uint8_t RAM[RAM_SIZE];
+uint16_t RAM_SIZE = 0;
+uint8_t * RAM = NULL;
 #endif
 
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -1395,12 +1406,23 @@ const uint8_t ticktable[256] = {
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
+
 #if defined(SPI_RAM)
 // TODO
 #elif defined(PARALLEL_SRAM)
 // TODO
 #else
 // internal RAM
+
+void AllocateRAM() {
+  if ((FreeBytes()) > 0xffff ) {
+    RAM_SIZE = 0xffff;
+  }
+  else {
+    RAM_SIZE = FreeBytes() - FREE_RAM;
+  }
+  RAM = (uint8_t*) calloc(RAM_SIZE, sizeof(uint8_t)); // allocate memory
+}
 
 inline void POKE (uint16_t addr , uint8_t bytE ) {
 
@@ -3314,1743 +3336,1736 @@ inline void player_setup() {
 void irq_handler(void) { //
 
 
-    SetAUDIO(); // in 20_hardware.ino
-    //   digitalWrite(PB13, HIGH);
+  SetAUDIO(); // in 20_hardware.ino
+  //   digitalWrite(PB13, HIGH);
 
-    VIC_irq = VIC_irq + multiplier;
-    if (VIC_irq >= SID_speed) {
-      VIC_irq_request = 1;
-      VIC_irq = 0;
+  VIC_irq = VIC_irq + multiplier;
+  if (VIC_irq >= SID_speed) {
+    VIC_irq_request = 1;
+    VIC_irq = 0;
+  }
+
+
+
+  tune_play_counter = tune_play_counter + multiplier;
+  if (tune_play_counter >= tune_end_counter) {
+    play_next_tune = true;
+  }
+
+  SID_emulator();
+
+  for (int cc = 0; cc < NUMBER_OF_INSTRUCTION_PER_IRQ; cc++) {
+    CPU_emulator();
+  }
+
+  if (previous_Tune != Tune) {
+    play_next_tune = true;
+  }
+
+
+  /////////////////////////////////////////////////
+  // play next tune check
+  if (play_next_tune == true) { // changing subtune
+    tune_play_counter = 0;
+
+    if (SID_current_tune == SID_number_of_tunes) {
+      SID_current_tune = 0;
     }
 
-
-
-    tune_play_counter = tune_play_counter + multiplier;
-    if (tune_play_counter >= tune_end_counter) {
-      play_next_tune = true;
-    }
-
-    SID_emulator();
-
-    for (int cc = 0; cc < NUMBER_OF_INSTRUCTION_PER_IRQ; cc++) {
-      CPU_emulator();
-    }
+    SID_current_tune = SID_current_tune + 1;
 
     if (previous_Tune != Tune) {
-      play_next_tune = true;
-    }
 
-
-    /////////////////////////////////////////////////
-    // play next tune check
-    if (play_next_tune == true) { // changing subtune
-      tune_play_counter = 0;
-
-      if (SID_current_tune == SID_number_of_tunes) {
-        SID_current_tune = 0;
-      }
-
-      SID_current_tune = SID_current_tune + 1;
-
-      if (previous_Tune != Tune) {
-
-        if ( (Tune < 1) | (Tune > SID_number_of_tunes) )  {
-          Tune = SID_default_tune;
-        }
-        else {
-
-          SID_current_tune = Tune  ;
-
-        }
-        previous_Tune = Tune;
-      }
-      set_tune_speed ();
-      //infoSID();
-      play_next_tune = false; // set speed and play next tune
-      reset6502();
-      reset_SID();
-      POKE (0x0304, SID_current_tune - 1 ); // player's address for init tune
-
-    } // play next tune check
-
-
-    STAD4XX = 0;
-    //   digitalWrite(PB13, LOW);
-  }
-
-  inline void CPU_emulator () {
-
-    if (JSR1003 == 1) { // JSR1003 check
-      //  digitalWrite(PB12, LOW);
-      if (VIC_irq_request == 1) {
-        JSR1003 = 0;
-        VIC_irq_request = 0;
-        //   digitalWrite(PB12, HIGH);
+      if ( (Tune < 1) | (Tune > SID_number_of_tunes) )  {
+        Tune = SID_default_tune;
       }
       else {
-        // tralala
+
+        SID_current_tune = Tune  ;
+
       }
+      previous_Tune = Tune;
+    }
+    reset_SID();
+    set_tune_speed ();
+    //infoSID();
+    play_next_tune = false; // set speed and play next tune
+    reset6502();
+    POKE (0x0304, SID_current_tune - 1 ); // player's address for init tune
+
+  } // play next tune check
+
+
+  STAD4XX = 0;
+  //   digitalWrite(PB13, LOW);
+}
+
+inline void CPU_emulator () {
+
+  if (JSR1003 == 1) { // JSR1003 check
+    //  digitalWrite(PB12, LOW);
+    if (VIC_irq_request == 1) {
+      JSR1003 = 0;
+      VIC_irq_request = 0;
+      //   digitalWrite(PB12, HIGH);
     }
     else {
-      exec6502();
+      // tralala
+    }
+  }
+  else {
+    exec6502();
+  }
+}
+
+inline void SID_emulator() {
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  //
+  //  Magic
+  //
+  ///////////////////////////////////
+
+
+
+  OSC_MSB_Previous_1 = OSC_MSB_1;
+  OSC_MSB_Previous_2 = OSC_MSB_2;
+  OSC_MSB_Previous_3 = OSC_MSB_3;
+
+
+  OSC_1 = ((!test_bit_voice_1) & 1) * ((OSC_1 + (  multiplier * OSC_1_HiLo)) ) & 0xffffff;
+  OSC_2 = ((!test_bit_voice_2) & 1) * ((OSC_2 + (  multiplier * OSC_2_HiLo)) ) & 0xffffff;
+  OSC_3 = ((!test_bit_voice_3) & 1) * ((OSC_3 + (  multiplier * OSC_3_HiLo)) ) & 0xffffff;
+
+
+  // noise_1
+  OSC_noise_1 = OSC_noise_1 + multiplier * OSC_1_HiLo;
+  OSC_bit19_1 = OSC_noise_1 >> 19 ;
+  for (temporary_variable_i = 0; temporary_variable_i < OSC_bit19_1; temporary_variable_i++) {
+    bit_0_1 = (( bitRead(pseudorandom_1, 22)   ) ^ ((bitRead(pseudorandom_1, 17 ) ) )  ) & 0x1;
+    pseudorandom_1 = pseudorandom_1 << 1;
+    //pseudorandom_1 = pseudorandom_1 & 0x7fffff;
+    pseudorandom_1 = bit_0_1 | pseudorandom_1;
+  }
+  OSC_noise_1 = OSC_noise_1 - (OSC_bit19_1 << 19);
+
+
+  // noise_2
+  OSC_noise_2 = OSC_noise_2 + multiplier * OSC_2_HiLo;
+  OSC_bit19_2 = OSC_noise_2 >> 19 ;
+  for (temporary_variable_i = 0; temporary_variable_i < OSC_bit19_2; temporary_variable_i++) {
+    bit_0_2 = (( bitRead(pseudorandom_2, 22)   ) ^ ((bitRead(pseudorandom_2, 17 ) ) )  ) & 0x1;
+    pseudorandom_2 = pseudorandom_2 << 1;
+    //pseudorandom_2 = pseudorandom_2 & 0x7fffff;
+    pseudorandom_2 = bit_0_2 | pseudorandom_2;
+  }
+  OSC_noise_2 = OSC_noise_2 - (OSC_bit19_2 << 19) ;
+
+  // noise_3
+  OSC_noise_3 = OSC_noise_3 + multiplier * OSC_3_HiLo;
+  OSC_bit19_3 = OSC_noise_3 >> 19 ;
+  for (temporary_variable_i = 0; temporary_variable_i < OSC_bit19_3; temporary_variable_i++) {
+    bit_0_3 = (( bitRead(pseudorandom_3, 22)   ) ^ ((bitRead(pseudorandom_3, 17 ) ) )  ) & 0x1;
+    pseudorandom_3 = pseudorandom_3 << 1;
+    //pseudorandom_3 = pseudorandom_3 & 0x7fffff;
+    pseudorandom_3 = bit_0_3 | pseudorandom_3;
+  }
+  OSC_noise_3 = OSC_noise_3 - (OSC_bit19_3 << 19 );
+
+  if (OSC_1 >= 0x800000)     OSC_MSB_1 = 1; else OSC_MSB_1 = 0;
+  if ( (!OSC_MSB_Previous_1) & (OSC_MSB_1)) MSB_Rising_1 = 1; else  MSB_Rising_1 = 0;
+
+  if (OSC_2 >= 0x800000)     OSC_MSB_2 = 1; else OSC_MSB_2 = 0;
+  if ( (!OSC_MSB_Previous_2) & (OSC_MSB_2)) MSB_Rising_2 = 1; else  MSB_Rising_2 = 0;
+
+  if (OSC_3 >= 0x800000)     OSC_MSB_3 = 1; else OSC_MSB_3 = 0;
+  if ( (!OSC_MSB_Previous_3) & (OSC_MSB_3)) MSB_Rising_3 = 1; else MSB_Rising_3 = 0;
+
+
+
+  if (SYNC_bit_voice_1 & MSB_Rising_3) OSC_1 = OSC_1 & 0x7fffff;
+  if (SYNC_bit_voice_2 & MSB_Rising_1) OSC_2 = OSC_2 & 0x7fffff;
+  if (SYNC_bit_voice_3 & MSB_Rising_2) OSC_3 = OSC_3 & 0x7fffff;
+
+  if ( (triangle_bit_voice_1) & (ring_bit_voice_1) ) OSC_MSB_1 = OSC_MSB_1 ^ OSC_MSB_3;
+  if ( (triangle_bit_voice_2) & (ring_bit_voice_2) ) OSC_MSB_2 = OSC_MSB_2 ^ OSC_MSB_1;
+  if ( (triangle_bit_voice_3) & (ring_bit_voice_3) ) OSC_MSB_3 = OSC_MSB_3 ^ OSC_MSB_2;
+
+  waveform_switch_1 = (noise_bit_voice_1 << 3) | (pulse_bit_voice_1 << 2) | (sawtooth_bit_voice_1 << 1) | (triangle_bit_voice_1);
+  waveform_switch_2 = (noise_bit_voice_2 << 3) | (pulse_bit_voice_2 << 2) | (sawtooth_bit_voice_2 << 1) | (triangle_bit_voice_2);
+  waveform_switch_3 = (noise_bit_voice_3 << 3) | (pulse_bit_voice_3 << 2) | (sawtooth_bit_voice_3 << 1) | (triangle_bit_voice_3);
+
+  temp11 = (OSC_1 >> 12);
+
+  switch (waveform_switch_1) {
+    case 0:
+      WaveformDA_1 = 0;
+      break;
+    case 1:
+      WaveformDA_triangle_1 = ((  (OSC_MSB_1 * B2047) ^ (temp11 & B2047)) << 1) ;
+      WaveformDA_1 = WaveformDA_triangle_1;
+      break;
+    case 2:
+      WaveformDA_sawtooth_1 = temp11;
+      WaveformDA_1 = WaveformDA_sawtooth_1;
+      break;
+    case 3:
+      WaveformDA_triangle_1 = ((  (OSC_MSB_1 * B2047) ^ (temp11 & B2047)) << 1) ;
+      WaveformDA_sawtooth_1 = temp11;
+      WaveformDA_1 = AND_mask[(WaveformDA_triangle_1 & WaveformDA_sawtooth_1)] << 4;
+      break;
+    case 4:
+      if (temp11 >= PW_HiLo_voice_1 )  WaveformDA_pulse_1 = B4095; else WaveformDA_pulse_1 = 0;
+      WaveformDA_1 = WaveformDA_pulse_1;
+      break;
+    case 5:
+      WaveformDA_triangle_1 = ((  (OSC_MSB_1 * B2047) ^ (temp11 & B2047)) << 1) ;
+      if (temp11 >= PW_HiLo_voice_1 )  WaveformDA_pulse_1 = B4095; else WaveformDA_pulse_1 = 0;
+      WaveformDA_1 = AND_mask[WaveformDA_triangle_1 & WaveformDA_pulse_1] << 4;
+      break;
+    case 6:
+      WaveformDA_sawtooth_1 = temp11; // same as upper 12 bits of OSC
+      if (temp11 >= PW_HiLo_voice_1 )  WaveformDA_pulse_1 = B4095; else WaveformDA_pulse_1 = 0;
+      WaveformDA_1 = AND_mask[WaveformDA_sawtooth_1 & WaveformDA_pulse_1] << 4;
+      break;
+    case 7:
+      WaveformDA_triangle_1 = ((  (OSC_MSB_1 * B2047) ^ (temp11 & B2047)) << 1) ;
+      WaveformDA_sawtooth_1 = temp11;
+      if (temp11 >= PW_HiLo_voice_1 )  WaveformDA_pulse_1 = B4095; else WaveformDA_pulse_1 = 0;
+      WaveformDA_1 = AND_mask[WaveformDA_pulse_1 & WaveformDA_sawtooth_1 & WaveformDA_triangle_1] << 4;
+      break;
+    case 8:
+      WaveformDA_noise_1 = B4095 & (pseudorandom_1 >> 11);
+
+      WaveformDA_1 =  WaveformDA_noise_1;
+      break;
+    case 9:
+      WaveformDA_1 = 0;
+      break;
+    case 10:
+      WaveformDA_1 = 0;
+      break;
+    case 11:
+      WaveformDA_1 = 0;
+      break;
+    case 12:
+      WaveformDA_1 = 0;
+      break;
+    case 13:
+      WaveformDA_1 = 0;
+      break;
+    case 14:
+      WaveformDA_1 = 0;
+      break;
+    case 15:
+      WaveformDA_1 = 0;
+      break;
+
+  }
+
+  // voice 2
+
+  temp12 = (OSC_2 >> 12);
+
+  switch (waveform_switch_2) {
+    case 0:
+      WaveformDA_2 = 0;
+      break;
+    case 1:
+      WaveformDA_triangle_2 = ((  (OSC_MSB_2 * B2047) ^ (temp12 & B2047)) << 1) ;
+      WaveformDA_2 = WaveformDA_triangle_2;
+      break;
+    case 2:
+      WaveformDA_sawtooth_2 = temp12;
+      WaveformDA_2 = WaveformDA_sawtooth_2;
+      break;
+    case 3:
+      WaveformDA_triangle_2 = ((  (OSC_MSB_2 * B2047) ^ (temp12 & B2047)) << 1) ;
+      WaveformDA_sawtooth_2 = temp12;
+      WaveformDA_2 = AND_mask[(WaveformDA_triangle_2 & WaveformDA_sawtooth_2)] << 4;
+      break;
+    case 4:
+      if (temp12 >= PW_HiLo_voice_2 )  WaveformDA_pulse_2 = B4095; else WaveformDA_pulse_2 = 0;
+      WaveformDA_2 = WaveformDA_pulse_2;
+      break;
+    case 5:
+      WaveformDA_triangle_2 = ((  (OSC_MSB_2 * B2047) ^ (temp12 & B2047)) << 1) ;
+      if (temp12 >= PW_HiLo_voice_2 )  WaveformDA_pulse_2 = B4095; else WaveformDA_pulse_2 = 0;
+      WaveformDA_2 = AND_mask[WaveformDA_triangle_2 & WaveformDA_pulse_2] << 4;
+      break;
+    case 6:
+      WaveformDA_sawtooth_2 = temp12;
+      if (temp12 >= PW_HiLo_voice_2 )  WaveformDA_pulse_2 = B4095; else WaveformDA_pulse_2 = 0;
+      WaveformDA_2 = AND_mask[WaveformDA_sawtooth_2 & WaveformDA_pulse_2] << 4;
+      break;
+    case 7:
+      WaveformDA_triangle_2 = ((  (OSC_MSB_2 * B2047) ^ (temp12 & B2047)) << 1) ;
+      WaveformDA_sawtooth_2 = temp12;
+      if (temp12 >= PW_HiLo_voice_2 )  WaveformDA_pulse_2 = B4095; else WaveformDA_pulse_2 = 0;
+      WaveformDA_2 = AND_mask[WaveformDA_pulse_2 & WaveformDA_sawtooth_2 & WaveformDA_triangle_2] << 4;
+      break;
+    case 8:
+      WaveformDA_noise_2 = B4095 & (pseudorandom_2 >> 11);
+      WaveformDA_2 =  WaveformDA_noise_2;
+      break;
+    case 9:
+      WaveformDA_2 = 0;
+      break;
+    case 10:
+      WaveformDA_2 = 0;
+      break;
+    case 11:
+      WaveformDA_2 = 0;
+      break;
+    case 12:
+      WaveformDA_2 = 0;
+      break;
+    case 13:
+      WaveformDA_2 = 0;
+      break;
+    case 14:
+      WaveformDA_2 = 0;
+      break;
+    case 15:
+      WaveformDA_2 = 0;
+      break;
+
+  }
+
+  // voice 3
+
+  temp13 = (OSC_3 >> 12);
+
+  switch (waveform_switch_3) {
+    case 0:
+      WaveformDA_3 = 0;
+      break;
+    case 1:
+      WaveformDA_triangle_3 = ((  (OSC_MSB_3 * B2047) ^ (temp13 & B2047)) << 1) ;
+      WaveformDA_3 = WaveformDA_triangle_3;
+      break;
+    case 2:
+      WaveformDA_sawtooth_3 = temp13;
+      WaveformDA_3 = WaveformDA_sawtooth_3;
+      break;
+    case 3:
+      WaveformDA_triangle_3 = ((  (OSC_MSB_3 * B2047) ^ (temp13 & B2047)) << 1) ;
+      WaveformDA_sawtooth_3 = temp13;
+      WaveformDA_3 = AND_mask[(WaveformDA_triangle_3 & WaveformDA_sawtooth_3)] << 4;
+      break;
+    case 4:
+      if (temp13 >= PW_HiLo_voice_3 )  WaveformDA_pulse_3 = B4095; else WaveformDA_pulse_3 = 0;
+      WaveformDA_3 = WaveformDA_pulse_3;
+      break;
+    case 5:
+      WaveformDA_triangle_3 = ((  (OSC_MSB_3 * B2047) ^ (temp13 & B2047)) << 1) ;
+      if (temp13 >= PW_HiLo_voice_3 )  WaveformDA_pulse_3 = B4095; else WaveformDA_pulse_3 = 0;
+      WaveformDA_3 = AND_mask[WaveformDA_triangle_3 & WaveformDA_pulse_3] << 4;
+      break;
+    case 6:
+      WaveformDA_sawtooth_3 = temp13;
+      if (temp13 >= PW_HiLo_voice_3 )  WaveformDA_pulse_3 = B4095; else WaveformDA_pulse_3 = 0;
+      WaveformDA_3 = AND_mask[WaveformDA_sawtooth_3 & WaveformDA_pulse_3] << 4;
+      break;
+    case 7:
+      WaveformDA_triangle_3 = ((  (OSC_MSB_3 * B2047) ^ (temp13 & B2047)) << 1) ;
+      WaveformDA_sawtooth_3 = temp13;
+      if (temp13 >= PW_HiLo_voice_3 )  WaveformDA_pulse_3 = B4095; else WaveformDA_pulse_3 = 0;
+      WaveformDA_3 = AND_mask[WaveformDA_pulse_3 & WaveformDA_sawtooth_3 & WaveformDA_triangle_3] << 4;
+      break;
+    case 8:
+      WaveformDA_noise_3 = B4095 & (pseudorandom_3 >> 11);
+      WaveformDA_3 =  WaveformDA_noise_3;
+      break;
+    case 9:
+      WaveformDA_3 = 0;
+      break;
+    case 10:
+      WaveformDA_3 = 0;
+      break;
+    case 11:
+      WaveformDA_3 = 0;
+      break;
+    case 12:
+      WaveformDA_3 = 0;
+      break;
+    case 13:
+      WaveformDA_3 = 0;
+      break;
+    case 14:
+      WaveformDA_3 = 0;
+      break;
+    case 15:
+      WaveformDA_3 = 0;
+      break;
+
+  }
+
+  //ADSR1
+
+  // gate change check
+
+  switch (Gate_bit_1) {
+    case 0:
+
+      if (Gate_previous_1 == 1) {
+
+        ADSR_stage_1 = 4;
+        LFSR15_1 = 0;
+        LFSR5_1 = 0;
+        LFSR15_comparator_value_1 = ADSR_LFSR15[ADSR_Release_1];
+        Gate_previous_1 = 0;
+      }
+      break;
+    case 1:
+      if (Gate_previous_1 == 0) {
+
+        ADSR_stage_1 = 1; //
+        LFSR15_1 = 0;
+        LFSR5_1 = 0;
+        Gate_previous_1 = 1;
+        hold_zero_1 = false;
+        LFSR15_comparator_value_1 = ADSR_LFSR15[ADSR_Attack_1];
+      }
+      break;
+  }
+
+  // Increase LFSR15 counter for ADSR (scaled to match)
+
+  LFSR15_1 = LFSR15_1 + multiplier;;
+  if (   ((LFSR15_1 >= LFSR15_comparator_value_1 ) ) ) {
+
+    Divided_LFSR15_1 = ((LFSR15_1 ) / LFSR15_comparator_value_1);
+    LFSR15_1 = LFSR15_1 - Divided_LFSR15_1 * LFSR15_comparator_value_1;
+    LFSR5_1 = LFSR5_1 + Divided_LFSR15_1 ;
+    if ((ADSR_stage_1 == 1) | (LFSR5_1 >= LFSR5_comparator_value_1) ) {
+      Divided_LFSR5_1 = (LFSR5_1 ) / LFSR5_comparator_value_1;
+      if (Divided_LFSR5_1 >= 1) {
+        LFSR5_1 = 0;
+      }
+      else {
+        LFSR5_1 =  LFSR5_1 - Divided_LFSR5_1 * LFSR5_comparator_value_1;
+      }
+
+      if (hold_zero_1 == false) {
+        switch (ADSR_stage_1) {
+          case 0:
+            break;
+          case 1:
+            ADSR_volume_1 = (ADSR_volume_1 + Divided_LFSR15_1) ;
+            if (ADSR_volume_1 >= 0xff) {
+              ADSR_volume_1 = 0xff - (ADSR_volume_1 - 0xff);
+              ADSR_stage_1 = 2;
+              hold_zero_1 = false;
+              LFSR15_comparator_value_1 = ADSR_LFSR15[ADSR_Decay_1   ];
+            }
+
+            break;
+          case 2:
+            if (ADSR_volume_1 >= Divided_LFSR5_1)        {
+              ADSR_volume_1 = ADSR_volume_1 - Divided_LFSR5_1;
+            }
+            else {
+              ADSR_volume_1 = 0;
+            }
+
+            if (ADSR_volume_1 <= (( ADSR_Sustain_1 << 4) + ADSR_Sustain_1)) {
+              ADSR_volume_1 = (( ADSR_Sustain_1 << 4) + ADSR_Sustain_1);
+              LFSR15_comparator_value_1 = ADSR_LFSR15[ADSR_Release_1   ];
+              ADSR_stage_1 = 3;
+            }
+            break;
+          case 3:
+            if (ADSR_volume_1 > (( ADSR_Sustain_1 << 4) + ADSR_Sustain_1)) {
+              ADSR_stage_1 = 2;
+              LFSR15_comparator_value_1 = ADSR_LFSR15[ADSR_Decay_1   ];
+            }
+            break;
+          case 4:
+            if (ADSR_volume_1 >= Divided_LFSR5_1)        {
+              ADSR_volume_1 = ADSR_volume_1 - Divided_LFSR5_1;
+            }
+            else {
+              ADSR_volume_1 = 0;
+            }
+            break;
+
+        }
+
+        LFSR5_comparator_value_1 = ADSR_Volume2LFSR5[ADSR_volume_1];
+
+
+        if (ADSR_volume_1 == 0) {
+          hold_zero_1 = true;
+        }
+
+      }
+    }
+
+
+
+
+  }
+
+  //ADSR2
+
+  // gate change check
+
+  switch (Gate_bit_2) {
+    case 0:
+
+      if (Gate_previous_2 == 1) {
+        ADSR_stage_2 = 4;
+        LFSR15_2 = 0;
+        LFSR5_2 = 0;
+        LFSR15_comparator_value_2 = ADSR_LFSR15[ADSR_Release_2];
+        Gate_previous_2 = 0;
+
+
+      }
+
+
+
+      break;
+    case 1:
+      if (Gate_previous_2 == 0) {
+        ADSR_stage_2 = 1;
+        LFSR15_2 = 0;
+        LFSR5_2 = 0;
+        Gate_previous_2 = 1;
+        hold_zero_2 = false;
+        LFSR15_comparator_value_2 = ADSR_LFSR15[ADSR_Attack_2];
+      }
+      break;
+  }
+
+  // Increase LFSR15 counter for ADSR (scaled to match)
+
+  LFSR15_2 = LFSR15_2 + multiplier;;
+  if (   ((LFSR15_2 >= LFSR15_comparator_value_2 ) ) ) {
+    Divided_LFSR15_2 = ((LFSR15_2 ) / LFSR15_comparator_value_2);
+    LFSR15_2 = LFSR15_2 - Divided_LFSR15_2 * LFSR15_comparator_value_2;
+    LFSR5_2 = LFSR5_2 + Divided_LFSR15_2 ;
+    if ((ADSR_stage_2 == 1) | (LFSR5_2 >= LFSR5_comparator_value_2) ) {
+      Divided_LFSR5_2 = (LFSR5_2 ) / LFSR5_comparator_value_2;
+      if (Divided_LFSR5_2 >= 1) {
+        LFSR5_2 = 0;
+      }
+      if (hold_zero_2 == false) {
+        switch (ADSR_stage_2) {
+
+          case 0:
+
+            break;
+          case 1:
+
+            ADSR_volume_2 = (ADSR_volume_2 + Divided_LFSR15_2) ;
+
+            if (ADSR_volume_2 >= 0xff) {
+              ADSR_volume_2 = 0xff - (ADSR_volume_2 - 0xff);
+              ADSR_stage_2 = 2;
+              hold_zero_2 = false;
+              LFSR15_comparator_value_2 = ADSR_LFSR15[ADSR_Decay_2   ];
+            }
+            break;
+          case 2:
+            if (ADSR_volume_2 >= Divided_LFSR5_2)        {
+              ADSR_volume_2 = ADSR_volume_2 - Divided_LFSR5_2;
+            }
+            else {
+              ADSR_volume_2 = 0;
+            }
+            if (ADSR_volume_2 <= (( ADSR_Sustain_2 << 4) + ADSR_Sustain_2)) {
+              ADSR_volume_2 = (( ADSR_Sustain_2 << 4) + ADSR_Sustain_2);
+              LFSR15_comparator_value_2 = ADSR_LFSR15[ADSR_Release_2   ];
+              ADSR_stage_2 = 3;
+            }
+            break;
+          case 3:
+            if (ADSR_volume_2 > (( ADSR_Sustain_2 << 4) + ADSR_Sustain_2)) {
+              ADSR_stage_2 = 2;
+              LFSR15_comparator_value_2 = ADSR_LFSR15[ADSR_Decay_2   ];
+            }
+            break;
+          case 4:
+            if (ADSR_volume_2 >= Divided_LFSR5_2)        {
+              ADSR_volume_2 = ADSR_volume_2 - Divided_LFSR5_2;
+            }
+            else {
+              ADSR_volume_2 = 0;
+            }
+            break;
+        }
+
+        LFSR5_comparator_value_2 = ADSR_Volume2LFSR5[ADSR_volume_2];
+
+        if (ADSR_volume_2 == 0) {
+          hold_zero_2 = true;
+        }
+      }
     }
   }
 
-  inline void SID_emulator() {
+  //ADSR3
 
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    //
-    //  Magic
-    //
-    ///////////////////////////////////
+  // gate change check
 
+  switch (Gate_bit_3) {
+    case 0:
 
-
-    OSC_MSB_Previous_1 = OSC_MSB_1;
-    OSC_MSB_Previous_2 = OSC_MSB_2;
-    OSC_MSB_Previous_3 = OSC_MSB_3;
-
-
-    OSC_1 = ((!test_bit_voice_1) & 1) * ((OSC_1 + (  multiplier * OSC_1_HiLo)) ) & 0xffffff;
-    OSC_2 = ((!test_bit_voice_2) & 1) * ((OSC_2 + (  multiplier * OSC_2_HiLo)) ) & 0xffffff;
-    OSC_3 = ((!test_bit_voice_3) & 1) * ((OSC_3 + (  multiplier * OSC_3_HiLo)) ) & 0xffffff;
-
-
-    // noise_1
-    OSC_noise_1 = OSC_noise_1 + multiplier * OSC_1_HiLo;
-    OSC_bit19_1 = OSC_noise_1 >> 19 ;
-    for (temporary_variable_i = 0; temporary_variable_i < OSC_bit19_1; temporary_variable_i++) {
-      bit_0_1 = (( bitRead(pseudorandom_1, 22)   ) ^ ((bitRead(pseudorandom_1, 17 ) ) )  ) & 0x1;
-      pseudorandom_1 = pseudorandom_1 << 1;
-      //pseudorandom_1 = pseudorandom_1 & 0x7fffff;
-      pseudorandom_1 = bit_0_1 | pseudorandom_1;
-    }
-    OSC_noise_1 = OSC_noise_1 - (OSC_bit19_1 << 19);
-
-
-    // noise_2
-    OSC_noise_2 = OSC_noise_2 + multiplier * OSC_2_HiLo;
-    OSC_bit19_2 = OSC_noise_2 >> 19 ;
-    for (temporary_variable_i = 0; temporary_variable_i < OSC_bit19_2; temporary_variable_i++) {
-      bit_0_2 = (( bitRead(pseudorandom_2, 22)   ) ^ ((bitRead(pseudorandom_2, 17 ) ) )  ) & 0x1;
-      pseudorandom_2 = pseudorandom_2 << 1;
-      //pseudorandom_2 = pseudorandom_2 & 0x7fffff;
-      pseudorandom_2 = bit_0_2 | pseudorandom_2;
-    }
-    OSC_noise_2 = OSC_noise_2 - (OSC_bit19_2 << 19) ;
-
-    // noise_3
-    OSC_noise_3 = OSC_noise_3 + multiplier * OSC_3_HiLo;
-    OSC_bit19_3 = OSC_noise_3 >> 19 ;
-    for (temporary_variable_i = 0; temporary_variable_i < OSC_bit19_3; temporary_variable_i++) {
-      bit_0_3 = (( bitRead(pseudorandom_3, 22)   ) ^ ((bitRead(pseudorandom_3, 17 ) ) )  ) & 0x1;
-      pseudorandom_3 = pseudorandom_3 << 1;
-      //pseudorandom_3 = pseudorandom_3 & 0x7fffff;
-      pseudorandom_3 = bit_0_3 | pseudorandom_3;
-    }
-    OSC_noise_3 = OSC_noise_3 - (OSC_bit19_3 << 19 );
-
-    if (OSC_1 >= 0x800000)     OSC_MSB_1 = 1; else OSC_MSB_1 = 0;
-    if ( (!OSC_MSB_Previous_1) & (OSC_MSB_1)) MSB_Rising_1 = 1; else  MSB_Rising_1 = 0;
-
-    if (OSC_2 >= 0x800000)     OSC_MSB_2 = 1; else OSC_MSB_2 = 0;
-    if ( (!OSC_MSB_Previous_2) & (OSC_MSB_2)) MSB_Rising_2 = 1; else  MSB_Rising_2 = 0;
-
-    if (OSC_3 >= 0x800000)     OSC_MSB_3 = 1; else OSC_MSB_3 = 0;
-    if ( (!OSC_MSB_Previous_3) & (OSC_MSB_3)) MSB_Rising_3 = 1; else MSB_Rising_3 = 0;
-
-
-
-    if (SYNC_bit_voice_1 & MSB_Rising_3) OSC_1 = OSC_1 & 0x7fffff;
-    if (SYNC_bit_voice_2 & MSB_Rising_1) OSC_2 = OSC_2 & 0x7fffff;
-    if (SYNC_bit_voice_3 & MSB_Rising_2) OSC_3 = OSC_3 & 0x7fffff;
-
-    if ( (triangle_bit_voice_1) & (ring_bit_voice_1) ) OSC_MSB_1 = OSC_MSB_1 ^ OSC_MSB_3;
-    if ( (triangle_bit_voice_2) & (ring_bit_voice_2) ) OSC_MSB_2 = OSC_MSB_2 ^ OSC_MSB_1;
-    if ( (triangle_bit_voice_3) & (ring_bit_voice_3) ) OSC_MSB_3 = OSC_MSB_3 ^ OSC_MSB_2;
-
-    waveform_switch_1 = (noise_bit_voice_1 << 3) | (pulse_bit_voice_1 << 2) | (sawtooth_bit_voice_1 << 1) | (triangle_bit_voice_1);
-    waveform_switch_2 = (noise_bit_voice_2 << 3) | (pulse_bit_voice_2 << 2) | (sawtooth_bit_voice_2 << 1) | (triangle_bit_voice_2);
-    waveform_switch_3 = (noise_bit_voice_3 << 3) | (pulse_bit_voice_3 << 2) | (sawtooth_bit_voice_3 << 1) | (triangle_bit_voice_3);
-
-    temp11 = (OSC_1 >> 12);
-
-    switch (waveform_switch_1) {
-      case 0:
-        WaveformDA_1 = 0;
-        break;
-      case 1:
-        WaveformDA_triangle_1 = ((  (OSC_MSB_1 * B2047) ^ (temp11 & B2047)) << 1) ;
-        WaveformDA_1 = WaveformDA_triangle_1;
-        break;
-      case 2:
-        WaveformDA_sawtooth_1 = temp11;
-        WaveformDA_1 = WaveformDA_sawtooth_1;
-        break;
-      case 3:
-        WaveformDA_triangle_1 = ((  (OSC_MSB_1 * B2047) ^ (temp11 & B2047)) << 1) ;
-        WaveformDA_sawtooth_1 = temp11;
-        WaveformDA_1 = AND_mask[(WaveformDA_triangle_1 & WaveformDA_sawtooth_1)] << 4;
-        break;
-      case 4:
-        if (temp11 >= PW_HiLo_voice_1 )  WaveformDA_pulse_1 = B4095; else WaveformDA_pulse_1 = 0;
-        WaveformDA_1 = WaveformDA_pulse_1;
-        break;
-      case 5:
-        WaveformDA_triangle_1 = ((  (OSC_MSB_1 * B2047) ^ (temp11 & B2047)) << 1) ;
-        if (temp11 >= PW_HiLo_voice_1 )  WaveformDA_pulse_1 = B4095; else WaveformDA_pulse_1 = 0;
-        WaveformDA_1 = AND_mask[WaveformDA_triangle_1 & WaveformDA_pulse_1] << 4;
-        break;
-      case 6:
-        WaveformDA_sawtooth_1 = temp11; // same as upper 12 bits of OSC
-        if (temp11 >= PW_HiLo_voice_1 )  WaveformDA_pulse_1 = B4095; else WaveformDA_pulse_1 = 0;
-        WaveformDA_1 = AND_mask[WaveformDA_sawtooth_1 & WaveformDA_pulse_1] << 4;
-        break;
-      case 7:
-        WaveformDA_triangle_1 = ((  (OSC_MSB_1 * B2047) ^ (temp11 & B2047)) << 1) ;
-        WaveformDA_sawtooth_1 = temp11;
-        if (temp11 >= PW_HiLo_voice_1 )  WaveformDA_pulse_1 = B4095; else WaveformDA_pulse_1 = 0;
-        WaveformDA_1 = AND_mask[WaveformDA_pulse_1 & WaveformDA_sawtooth_1 & WaveformDA_triangle_1] << 4;
-        break;
-      case 8:
-        WaveformDA_noise_1 = B4095 & (pseudorandom_1 >> 11);
-
-        WaveformDA_1 =  WaveformDA_noise_1;
-        break;
-      case 9:
-        WaveformDA_1 = 0;
-        break;
-      case 10:
-        WaveformDA_1 = 0;
-        break;
-      case 11:
-        WaveformDA_1 = 0;
-        break;
-      case 12:
-        WaveformDA_1 = 0;
-        break;
-      case 13:
-        WaveformDA_1 = 0;
-        break;
-      case 14:
-        WaveformDA_1 = 0;
-        break;
-      case 15:
-        WaveformDA_1 = 0;
-        break;
-
-    }
-
-    // voice 2
-
-    temp12 = (OSC_2 >> 12);
-
-    switch (waveform_switch_2) {
-      case 0:
-        WaveformDA_2 = 0;
-        break;
-      case 1:
-        WaveformDA_triangle_2 = ((  (OSC_MSB_2 * B2047) ^ (temp12 & B2047)) << 1) ;
-        WaveformDA_2 = WaveformDA_triangle_2;
-        break;
-      case 2:
-        WaveformDA_sawtooth_2 = temp12;
-        WaveformDA_2 = WaveformDA_sawtooth_2;
-        break;
-      case 3:
-        WaveformDA_triangle_2 = ((  (OSC_MSB_2 * B2047) ^ (temp12 & B2047)) << 1) ;
-        WaveformDA_sawtooth_2 = temp12;
-        WaveformDA_2 = AND_mask[(WaveformDA_triangle_2 & WaveformDA_sawtooth_2)] << 4;
-        break;
-      case 4:
-        if (temp12 >= PW_HiLo_voice_2 )  WaveformDA_pulse_2 = B4095; else WaveformDA_pulse_2 = 0;
-        WaveformDA_2 = WaveformDA_pulse_2;
-        break;
-      case 5:
-        WaveformDA_triangle_2 = ((  (OSC_MSB_2 * B2047) ^ (temp12 & B2047)) << 1) ;
-        if (temp12 >= PW_HiLo_voice_2 )  WaveformDA_pulse_2 = B4095; else WaveformDA_pulse_2 = 0;
-        WaveformDA_2 = AND_mask[WaveformDA_triangle_2 & WaveformDA_pulse_2] << 4;
-        break;
-      case 6:
-        WaveformDA_sawtooth_2 = temp12;
-        if (temp12 >= PW_HiLo_voice_2 )  WaveformDA_pulse_2 = B4095; else WaveformDA_pulse_2 = 0;
-        WaveformDA_2 = AND_mask[WaveformDA_sawtooth_2 & WaveformDA_pulse_2] << 4;
-        break;
-      case 7:
-        WaveformDA_triangle_2 = ((  (OSC_MSB_2 * B2047) ^ (temp12 & B2047)) << 1) ;
-        WaveformDA_sawtooth_2 = temp12;
-        if (temp12 >= PW_HiLo_voice_2 )  WaveformDA_pulse_2 = B4095; else WaveformDA_pulse_2 = 0;
-        WaveformDA_2 = AND_mask[WaveformDA_pulse_2 & WaveformDA_sawtooth_2 & WaveformDA_triangle_2] << 4;
-        break;
-      case 8:
-        WaveformDA_noise_2 = B4095 & (pseudorandom_2 >> 11);
-        WaveformDA_2 =  WaveformDA_noise_2;
-        break;
-      case 9:
-        WaveformDA_2 = 0;
-        break;
-      case 10:
-        WaveformDA_2 = 0;
-        break;
-      case 11:
-        WaveformDA_2 = 0;
-        break;
-      case 12:
-        WaveformDA_2 = 0;
-        break;
-      case 13:
-        WaveformDA_2 = 0;
-        break;
-      case 14:
-        WaveformDA_2 = 0;
-        break;
-      case 15:
-        WaveformDA_2 = 0;
-        break;
-
-    }
-
-    // voice 3
-
-    temp13 = (OSC_3 >> 12);
-
-    switch (waveform_switch_3) {
-      case 0:
-        WaveformDA_3 = 0;
-        break;
-      case 1:
-        WaveformDA_triangle_3 = ((  (OSC_MSB_3 * B2047) ^ (temp13 & B2047)) << 1) ;
-        WaveformDA_3 = WaveformDA_triangle_3;
-        break;
-      case 2:
-        WaveformDA_sawtooth_3 = temp13;
-        WaveformDA_3 = WaveformDA_sawtooth_3;
-        break;
-      case 3:
-        WaveformDA_triangle_3 = ((  (OSC_MSB_3 * B2047) ^ (temp13 & B2047)) << 1) ;
-        WaveformDA_sawtooth_3 = temp13;
-        WaveformDA_3 = AND_mask[(WaveformDA_triangle_3 & WaveformDA_sawtooth_3)] << 4;
-        break;
-      case 4:
-        if (temp13 >= PW_HiLo_voice_3 )  WaveformDA_pulse_3 = B4095; else WaveformDA_pulse_3 = 0;
-        WaveformDA_3 = WaveformDA_pulse_3;
-        break;
-      case 5:
-        WaveformDA_triangle_3 = ((  (OSC_MSB_3 * B2047) ^ (temp13 & B2047)) << 1) ;
-        if (temp13 >= PW_HiLo_voice_3 )  WaveformDA_pulse_3 = B4095; else WaveformDA_pulse_3 = 0;
-        WaveformDA_3 = AND_mask[WaveformDA_triangle_3 & WaveformDA_pulse_3] << 4;
-        break;
-      case 6:
-        WaveformDA_sawtooth_3 = temp13;
-        if (temp13 >= PW_HiLo_voice_3 )  WaveformDA_pulse_3 = B4095; else WaveformDA_pulse_3 = 0;
-        WaveformDA_3 = AND_mask[WaveformDA_sawtooth_3 & WaveformDA_pulse_3] << 4;
-        break;
-      case 7:
-        WaveformDA_triangle_3 = ((  (OSC_MSB_3 * B2047) ^ (temp13 & B2047)) << 1) ;
-        WaveformDA_sawtooth_3 = temp13;
-        if (temp13 >= PW_HiLo_voice_3 )  WaveformDA_pulse_3 = B4095; else WaveformDA_pulse_3 = 0;
-        WaveformDA_3 = AND_mask[WaveformDA_pulse_3 & WaveformDA_sawtooth_3 & WaveformDA_triangle_3] << 4;
-        break;
-      case 8:
-        WaveformDA_noise_3 = B4095 & (pseudorandom_3 >> 11);
-        WaveformDA_3 =  WaveformDA_noise_3;
-        break;
-      case 9:
-        WaveformDA_3 = 0;
-        break;
-      case 10:
-        WaveformDA_3 = 0;
-        break;
-      case 11:
-        WaveformDA_3 = 0;
-        break;
-      case 12:
-        WaveformDA_3 = 0;
-        break;
-      case 13:
-        WaveformDA_3 = 0;
-        break;
-      case 14:
-        WaveformDA_3 = 0;
-        break;
-      case 15:
-        WaveformDA_3 = 0;
-        break;
-
-    }
-
-    //ADSR1
-
-    // gate change check
-
-    switch (Gate_bit_1) {
-      case 0:
-
-        if (Gate_previous_1 == 1) {
-
-          ADSR_stage_1 = 4;
-          LFSR15_1 = 0;
-          LFSR5_1 = 0;
-          LFSR15_comparator_value_1 = ADSR_LFSR15[ADSR_Release_1];
-          Gate_previous_1 = 0;
-        }
-        break;
-      case 1:
-        if (Gate_previous_1 == 0) {
-
-          ADSR_stage_1 = 1; //
-          LFSR15_1 = 0;
-          LFSR5_1 = 0;
-          Gate_previous_1 = 1;
-          hold_zero_1 = false;
-          LFSR15_comparator_value_1 = ADSR_LFSR15[ADSR_Attack_1];
-        }
-        break;
-    }
-
-    // Increase LFSR15 counter for ADSR (scaled to match)
-
-    LFSR15_1 = LFSR15_1 + multiplier;;
-    if (   ((LFSR15_1 >= LFSR15_comparator_value_1 ) ) ) {
-
-      Divided_LFSR15_1 = ((LFSR15_1 ) / LFSR15_comparator_value_1);
-      LFSR15_1 = LFSR15_1 - Divided_LFSR15_1 * LFSR15_comparator_value_1;
-      LFSR5_1 = LFSR5_1 + Divided_LFSR15_1 ;
-      if ((ADSR_stage_1 == 1) | (LFSR5_1 >= LFSR5_comparator_value_1) ) {
-        Divided_LFSR5_1 = (LFSR5_1 ) / LFSR5_comparator_value_1;
-        if (Divided_LFSR5_1 >= 1) {
-          LFSR5_1 = 0;
-        }
-        else {
-          LFSR5_1 =  LFSR5_1 - Divided_LFSR5_1 * LFSR5_comparator_value_1;
-        }
-
-        if (hold_zero_1 == false) {
-          switch (ADSR_stage_1) {
-            case 0:
-              break;
-            case 1:
-              ADSR_volume_1 = (ADSR_volume_1 + Divided_LFSR15_1) ;
-              if (ADSR_volume_1 >= 0xff) {
-                ADSR_volume_1 = 0xff - (ADSR_volume_1 - 0xff);
-                ADSR_stage_1 = 2;
-                hold_zero_1 = false;
-                LFSR15_comparator_value_1 = ADSR_LFSR15[ADSR_Decay_1   ];
-              }
-
-              break;
-            case 2:
-              if (ADSR_volume_1 >= Divided_LFSR5_1)        {
-                ADSR_volume_1 = ADSR_volume_1 - Divided_LFSR5_1;
-              }
-              else {
-                ADSR_volume_1 = 0;
-              }
-
-              if (ADSR_volume_1 <= (( ADSR_Sustain_1 << 4) + ADSR_Sustain_1)) {
-                ADSR_volume_1 = (( ADSR_Sustain_1 << 4) + ADSR_Sustain_1);
-                LFSR15_comparator_value_1 = ADSR_LFSR15[ADSR_Release_1   ];
-                ADSR_stage_1 = 3;
-              }
-              break;
-            case 3:
-              if (ADSR_volume_1 > (( ADSR_Sustain_1 << 4) + ADSR_Sustain_1)) {
-                ADSR_stage_1 = 2;
-                LFSR15_comparator_value_1 = ADSR_LFSR15[ADSR_Decay_1   ];
-              }
-              break;
-            case 4:
-              if (ADSR_volume_1 >= Divided_LFSR5_1)        {
-                ADSR_volume_1 = ADSR_volume_1 - Divided_LFSR5_1;
-              }
-              else {
-                ADSR_volume_1 = 0;
-              }
-              break;
-
-          }
-
-          LFSR5_comparator_value_1 = ADSR_Volume2LFSR5[ADSR_volume_1];
-
-
-          if (ADSR_volume_1 == 0) {
-            hold_zero_1 = true;
-          }
-
-        }
+      if (Gate_previous_3 == 1) {
+        ADSR_stage_3 = 4;
+        LFSR15_3 = 0;
+        LFSR5_3 = 0;
+        LFSR15_comparator_value_3 = ADSR_LFSR15[ADSR_Release_3];
+        Gate_previous_3 = 0;
       }
+      break;
+    case 1:
+      if (Gate_previous_3 == 0) {
+        ADSR_stage_3 = 1; //
+        LFSR15_3 = 0;
+        LFSR5_3 = 0;
+        Gate_previous_3 = 1;
+        hold_zero_3 = false;
+        LFSR15_comparator_value_3 = ADSR_LFSR15[ADSR_Attack_3];
+      }
+      break;
 
+  }
 
+  // Increase LFSR15 counter for ADSR (scaled to match)
 
+  LFSR15_3 = LFSR15_3 + multiplier;;
+  if (   ((LFSR15_3 >= LFSR15_comparator_value_3 ) ) ) {
 
-    }
+    Divided_LFSR15_3 = ((LFSR15_3 ) / LFSR15_comparator_value_3);
+    LFSR15_3 = LFSR15_3 - Divided_LFSR15_3 * LFSR15_comparator_value_3;
+    LFSR5_3 = LFSR5_3 + Divided_LFSR15_3 ;
 
-    //ADSR2
+    if ((ADSR_stage_3 == 1) | (LFSR5_3 >= LFSR5_comparator_value_3) ) {
+      Divided_LFSR5_3 = (LFSR5_3 ) / LFSR5_comparator_value_3;
+      if (Divided_LFSR5_3 >= 1) {
+        LFSR5_3 = 0;
+      }
+      else {
+        LFSR5_3 =  LFSR5_3 - Divided_LFSR5_3 * LFSR5_comparator_value_3;
+      }
+      if (hold_zero_3 == false) {
 
-    // gate change check
-
-    switch (Gate_bit_2) {
-      case 0:
-
-        if (Gate_previous_2 == 1) {
-          ADSR_stage_2 = 4;
-          LFSR15_2 = 0;
-          LFSR5_2 = 0;
-          LFSR15_comparator_value_2 = ADSR_LFSR15[ADSR_Release_2];
-          Gate_previous_2 = 0;
-
-
+        switch (ADSR_stage_3) {
+          case 0:
+            break;
+          case 1:
+            ADSR_volume_3 = (ADSR_volume_3 + Divided_LFSR15_3) ;
+            if (ADSR_volume_3 >= 0xff) {
+              ADSR_volume_3 = 0xff - (ADSR_volume_3 - 0xff);
+              ADSR_stage_3 = 2;
+              hold_zero_3 = false;
+              LFSR15_comparator_value_3 = ADSR_LFSR15[ADSR_Decay_3   ];
+            }
+            break;
+          case 2:
+            if (ADSR_volume_3 >= Divided_LFSR5_3)        {
+              ADSR_volume_3 = ADSR_volume_3 - Divided_LFSR5_3;
+            }
+            else {
+              ADSR_volume_3 = 0;
+            }
+            if (ADSR_volume_3 <= (( ADSR_Sustain_3 << 4) + ADSR_Sustain_3)) {
+              ADSR_volume_3 = (( ADSR_Sustain_3 << 4) + ADSR_Sustain_3);
+              LFSR15_comparator_value_3 = ADSR_LFSR15[ADSR_Release_3   ];
+              ADSR_stage_3 = 3;
+            }
+            break;
+          case 3:
+            if (ADSR_volume_3 > (( ADSR_Sustain_3 << 4) + ADSR_Sustain_3)) {
+              ADSR_stage_3 = 2;
+              LFSR15_comparator_value_3 = ADSR_LFSR15[ADSR_Decay_3   ];
+            }
+            break;
+          case 4:
+            if (ADSR_volume_3 >= Divided_LFSR5_3)        {
+              ADSR_volume_3 = ADSR_volume_3 - Divided_LFSR5_3;
+            }
+            else {
+              ADSR_volume_3 = 0;
+            }
+            break;
         }
 
+        LFSR5_comparator_value_3 = ADSR_Volume2LFSR5[ADSR_volume_3];
 
-
-        break;
-      case 1:
-        if (Gate_previous_2 == 0) {
-          ADSR_stage_2 = 1;
-          LFSR15_2 = 0;
-          LFSR5_2 = 0;
-          Gate_previous_2 = 1;
-          hold_zero_2 = false;
-          LFSR15_comparator_value_2 = ADSR_LFSR15[ADSR_Attack_2];
+        if (ADSR_volume_3 == 0) {
+          hold_zero_3 = true;
         }
-        break;
-    }
 
-    // Increase LFSR15 counter for ADSR (scaled to match)
-
-    LFSR15_2 = LFSR15_2 + multiplier;;
-    if (   ((LFSR15_2 >= LFSR15_comparator_value_2 ) ) ) {
-      Divided_LFSR15_2 = ((LFSR15_2 ) / LFSR15_comparator_value_2);
-      LFSR15_2 = LFSR15_2 - Divided_LFSR15_2 * LFSR15_comparator_value_2;
-      LFSR5_2 = LFSR5_2 + Divided_LFSR15_2 ;
-      if ((ADSR_stage_2 == 1) | (LFSR5_2 >= LFSR5_comparator_value_2) ) {
-        Divided_LFSR5_2 = (LFSR5_2 ) / LFSR5_comparator_value_2;
-        if (Divided_LFSR5_2 >= 1) {
-          LFSR5_2 = 0;
-        }
-        if (hold_zero_2 == false) {
-          switch (ADSR_stage_2) {
-
-            case 0:
-
-              break;
-            case 1:
-
-              ADSR_volume_2 = (ADSR_volume_2 + Divided_LFSR15_2) ;
-
-              if (ADSR_volume_2 >= 0xff) {
-                ADSR_volume_2 = 0xff - (ADSR_volume_2 - 0xff);
-                ADSR_stage_2 = 2;
-                hold_zero_2 = false;
-                LFSR15_comparator_value_2 = ADSR_LFSR15[ADSR_Decay_2   ];
-              }
-              break;
-            case 2:
-              if (ADSR_volume_2 >= Divided_LFSR5_2)        {
-                ADSR_volume_2 = ADSR_volume_2 - Divided_LFSR5_2;
-              }
-              else {
-                ADSR_volume_2 = 0;
-              }
-              if (ADSR_volume_2 <= (( ADSR_Sustain_2 << 4) + ADSR_Sustain_2)) {
-                ADSR_volume_2 = (( ADSR_Sustain_2 << 4) + ADSR_Sustain_2);
-                LFSR15_comparator_value_2 = ADSR_LFSR15[ADSR_Release_2   ];
-                ADSR_stage_2 = 3;
-              }
-              break;
-            case 3:
-              if (ADSR_volume_2 > (( ADSR_Sustain_2 << 4) + ADSR_Sustain_2)) {
-                ADSR_stage_2 = 2;
-                LFSR15_comparator_value_2 = ADSR_LFSR15[ADSR_Decay_2   ];
-              }
-              break;
-            case 4:
-              if (ADSR_volume_2 >= Divided_LFSR5_2)        {
-                ADSR_volume_2 = ADSR_volume_2 - Divided_LFSR5_2;
-              }
-              else {
-                ADSR_volume_2 = 0;
-              }
-              break;
-          }
-
-          LFSR5_comparator_value_2 = ADSR_Volume2LFSR5[ADSR_volume_2];
-
-          if (ADSR_volume_2 == 0) {
-            hold_zero_2 = true;
-          }
-        }
       }
     }
+  }
 
-    //ADSR3
-
-    // gate change check
-
-    switch (Gate_bit_3) {
-      case 0:
-
-        if (Gate_previous_3 == 1) {
-          ADSR_stage_3 = 4;
-          LFSR15_3 = 0;
-          LFSR5_3 = 0;
-          LFSR15_comparator_value_3 = ADSR_LFSR15[ADSR_Release_3];
-          Gate_previous_3 = 0;
-        }
-        break;
-      case 1:
-        if (Gate_previous_3 == 0) {
-          ADSR_stage_3 = 1; //
-          LFSR15_3 = 0;
-          LFSR5_3 = 0;
-          Gate_previous_3 = 1;
-          hold_zero_3 = false;
-          LFSR15_comparator_value_3 = ADSR_LFSR15[ADSR_Attack_3];
-        }
-        break;
-
-    }
-
-    // Increase LFSR15 counter for ADSR (scaled to match)
-
-    LFSR15_3 = LFSR15_3 + multiplier;;
-    if (   ((LFSR15_3 >= LFSR15_comparator_value_3 ) ) ) {
-
-      Divided_LFSR15_3 = ((LFSR15_3 ) / LFSR15_comparator_value_3);
-      LFSR15_3 = LFSR15_3 - Divided_LFSR15_3 * LFSR15_comparator_value_3;
-      LFSR5_3 = LFSR5_3 + Divided_LFSR15_3 ;
-
-      if ((ADSR_stage_3 == 1) | (LFSR5_3 >= LFSR5_comparator_value_3) ) {
-        Divided_LFSR5_3 = (LFSR5_3 ) / LFSR5_comparator_value_3;
-        if (Divided_LFSR5_3 >= 1) {
-          LFSR5_3 = 0;
-        }
-        else {
-          LFSR5_3 =  LFSR5_3 - Divided_LFSR5_3 * LFSR5_comparator_value_3;
-        }
-        if (hold_zero_3 == false) {
-
-          switch (ADSR_stage_3) {
-            case 0:
-              break;
-            case 1:
-              ADSR_volume_3 = (ADSR_volume_3 + Divided_LFSR15_3) ;
-              if (ADSR_volume_3 >= 0xff) {
-                ADSR_volume_3 = 0xff - (ADSR_volume_3 - 0xff);
-                ADSR_stage_3 = 2;
-                hold_zero_3 = false;
-                LFSR15_comparator_value_3 = ADSR_LFSR15[ADSR_Decay_3   ];
-              }
-              break;
-            case 2:
-              if (ADSR_volume_3 >= Divided_LFSR5_3)        {
-                ADSR_volume_3 = ADSR_volume_3 - Divided_LFSR5_3;
-              }
-              else {
-                ADSR_volume_3 = 0;
-              }
-              if (ADSR_volume_3 <= (( ADSR_Sustain_3 << 4) + ADSR_Sustain_3)) {
-                ADSR_volume_3 = (( ADSR_Sustain_3 << 4) + ADSR_Sustain_3);
-                LFSR15_comparator_value_3 = ADSR_LFSR15[ADSR_Release_3   ];
-                ADSR_stage_3 = 3;
-              }
-              break;
-            case 3:
-              if (ADSR_volume_3 > (( ADSR_Sustain_3 << 4) + ADSR_Sustain_3)) {
-                ADSR_stage_3 = 2;
-                LFSR15_comparator_value_3 = ADSR_LFSR15[ADSR_Decay_3   ];
-              }
-              break;
-            case 4:
-              if (ADSR_volume_3 >= Divided_LFSR5_3)        {
-                ADSR_volume_3 = ADSR_volume_3 - Divided_LFSR5_3;
-              }
-              else {
-                ADSR_volume_3 = 0;
-              }
-              break;
-          }
-
-          LFSR5_comparator_value_3 = ADSR_Volume2LFSR5[ADSR_volume_3];
-
-          if (ADSR_volume_3 == 0) {
-            hold_zero_3 = true;
-          }
-
-        }
-      }
-    }
-
-    //   FILTERS:
+  //   FILTERS:
 
 
 #ifndef USE_FILTERS
-    if (FILTER_Enable_1) {
-      if (FILTER_LP) {
-        WaveformDA_1 = 0xfff - WaveformDA_1  ;
-      }
-      if (FILTER_HP) {
-        WaveformDA_1 = 0xfff - WaveformDA_1 ;
-      }
+  if (FILTER_Enable_1) {
+    if (FILTER_LP) {
+      WaveformDA_1 = 0xfff - WaveformDA_1  ;
     }
-    if (FILTER_Enable_2) {
-      if (FILTER_LP) {
-        WaveformDA_2 = 0xfff - WaveformDA_2 ;
-      }
-      if (FILTER_HP) {
-        WaveformDA_2 = 0xfff - WaveformDA_2 ;
-      }
+    if (FILTER_HP) {
+      WaveformDA_1 = 0xfff - WaveformDA_1 ;
     }
-    if (FILTER_Enable_3) {
-      if (FILTER_LP) {
-        WaveformDA_3 = 0xfff - WaveformDA_3 ;
-      }
-      if (FILTER_HP) {
-        WaveformDA_3 = 0xfff - WaveformDA_3 ;
-      }
+  }
+  if (FILTER_Enable_2) {
+    if (FILTER_LP) {
+      WaveformDA_2 = 0xfff - WaveformDA_2 ;
     }
+    if (FILTER_HP) {
+      WaveformDA_2 = 0xfff - WaveformDA_2 ;
+    }
+  }
+  if (FILTER_Enable_3) {
+    if (FILTER_LP) {
+      WaveformDA_3 = 0xfff - WaveformDA_3 ;
+    }
+    if (FILTER_HP) {
+      WaveformDA_3 = 0xfff - WaveformDA_3 ;
+    }
+  }
 
 #endif
 
 #ifndef USE_CHANNEL_1
-    WaveformDA_1 = 0;
+  WaveformDA_1 = 0;
 #endif
 #ifndef USE_CHANNEL_2
-    WaveformDA_2 = 0;
+  WaveformDA_2 = 0;
 #endif
 #ifndef USE_CHANNEL_3
-    WaveformDA_3 = 0;
+  WaveformDA_3 = 0;
 #endif
 
-    /////////////////// ANALOG ///////////////////////////
+  /////////////////// ANALOG ///////////////////////////
 
-    Volume_1 = int32_t(WaveformDA_1 * ADSR_volume_1) - 0x80000 ;
-    Volume_2 = int32_t(WaveformDA_2 * ADSR_volume_2) - 0x80000 ;
-    Volume_3 = int32_t(WaveformDA_3 * ADSR_volume_3) - 0x80000 ;
+  Volume_1 = int32_t(WaveformDA_1 * ADSR_volume_1) - 0x80000 ;
+  Volume_2 = int32_t(WaveformDA_2 * ADSR_volume_2) - 0x80000 ;
+  Volume_3 = int32_t(WaveformDA_3 * ADSR_volume_3) - 0x80000 ;
 
-    // FILTERS redirect to filtered or unfiltered output
+  // FILTERS redirect to filtered or unfiltered output
 
-    switch (FILTER_Enable_switch) {
-      default:
-      case 0x0:
-        Volume_filtered = 0;
-        if (OFF3 )
-        {
-          Volume_unfiltered = Volume_1 + Volume_2;
-        }
-        else {
-          Volume_unfiltered = Volume_1 + Volume_2 + Volume_3 ;
-        }
-        break;
-      case 0x1:
-        Volume_filtered = Volume_1;
-        if (OFF3 )
-        {
-          Volume_unfiltered =  Volume_2;
-        }
-        else
-        {
-          Volume_unfiltered = Volume_2 + Volume_3 ;
-        }
-        break;
-      case 0x2:
-        Volume_filtered = Volume_2;
-        if (OFF3 )
-        {
-          Volume_unfiltered = Volume_1  ;
-        }
-        else
-        {
-          Volume_unfiltered = Volume_1 + Volume_3 ;
-        }
-        break;
-      case 0x3:
-        Volume_filtered = Volume_1 + Volume_2;
-        if (OFF3 )
-        {
-          Volume_unfiltered = 0 ;
-        }
-        else
-        {
-          Volume_unfiltered = Volume_3 ;
-        }
-        break;
-      case 0x4:
-        Volume_filtered = Volume_3;
-        Volume_unfiltered = Volume_1 + Volume_2 ;
-        break;
-      case 0x5:
-        Volume_filtered = Volume_1 + Volume_3;
-        Volume_unfiltered = Volume_2 ;
-        break;
-      case 0x6:
-        Volume_filtered = Volume_2 + Volume_3;
-        Volume_unfiltered = Volume_1 ;
-        break;
-      case 0x7:
-        Volume_filtered = Volume_1 + Volume_2 + Volume_3;
-        Volume_unfiltered = 0;
-        break;
-    }
+  switch (FILTER_Enable_switch) {
+    default:
+    case 0x0:
+      Volume_filtered = 0;
+      if (OFF3 )
+      {
+        Volume_unfiltered = Volume_1 + Volume_2;
+      }
+      else {
+        Volume_unfiltered = Volume_1 + Volume_2 + Volume_3 ;
+      }
+      break;
+    case 0x1:
+      Volume_filtered = Volume_1;
+      if (OFF3 )
+      {
+        Volume_unfiltered =  Volume_2;
+      }
+      else
+      {
+        Volume_unfiltered = Volume_2 + Volume_3 ;
+      }
+      break;
+    case 0x2:
+      Volume_filtered = Volume_2;
+      if (OFF3 )
+      {
+        Volume_unfiltered = Volume_1  ;
+      }
+      else
+      {
+        Volume_unfiltered = Volume_1 + Volume_3 ;
+      }
+      break;
+    case 0x3:
+      Volume_filtered = Volume_1 + Volume_2;
+      if (OFF3 )
+      {
+        Volume_unfiltered = 0 ;
+      }
+      else
+      {
+        Volume_unfiltered = Volume_3 ;
+      }
+      break;
+    case 0x4:
+      Volume_filtered = Volume_3;
+      Volume_unfiltered = Volume_1 + Volume_2 ;
+      break;
+    case 0x5:
+      Volume_filtered = Volume_1 + Volume_3;
+      Volume_unfiltered = Volume_2 ;
+      break;
+    case 0x6:
+      Volume_filtered = Volume_2 + Volume_3;
+      Volume_unfiltered = Volume_1 ;
+      break;
+    case 0x7:
+      Volume_filtered = Volume_1 + Volume_2 + Volume_3;
+      Volume_unfiltered = 0;
+      break;
+  }
 
-    Volume_filter_input = Volume_filtered;
-    Volume_filter_output = Volume_filtered;
+  Volume_filter_input = Volume_filtered;
+  Volume_filter_output = Volume_filtered;
 
 
 #ifdef USE_FILTERS
 
-    Volume_filter_input = int32_t(Volume_filter_input) >> 7;
+  Volume_filter_input = int32_t(Volume_filter_input) >> 7;
 
-    delta_t = multiplier;
-    delta_t_flt = FILTER_SENSITIVITY;
+  delta_t = multiplier;
+  delta_t_flt = FILTER_SENSITIVITY;
 
-    while (delta_t) {
-      if (delta_t < delta_t_flt) {
-        delta_t_flt = delta_t;
-      }
-
-      w0_delta_t = (int32_t(w0_ceil_dt * delta_t_flt) >> 6);
-      dVbp = (int32_t(w0_delta_t*Vhp) >> 14);
-      dVlp = (int32_t(w0_delta_t*Vbp) >> 14);
-      Vbp -= dVbp;
-      Vlp -= dVlp;
-      Vhp = (int32_t(Vbp * (Q_1024_div)) >> 10) - Vlp - Volume_filter_input;
-      delta_t -= delta_t_flt;
+  while (delta_t) {
+    if (delta_t < delta_t_flt) {
+      delta_t_flt = delta_t;
     }
 
-    Volume_filter_output = 0;
-    if (FILTER_LP) {
-      Volume_filter_output = Volume_filter_output + Vlp;
-    }
-    if (FILTER_HP) {
-      Volume_filter_output = Volume_filter_output + Vhp;
-    }
-    if (FILTER_BP) {
-      Volume_filter_output = Volume_filter_output + Vbp;
-    }
-    //
+    w0_delta_t = (int32_t(w0_ceil_dt * delta_t_flt) >> 6);
+    dVbp = (int32_t(w0_delta_t*Vhp) >> 14);
+    dVlp = (int32_t(w0_delta_t*Vbp) >> 14);
+    Vbp -= dVbp;
+    Vlp -= dVlp;
+    Vhp = (int32_t(Vbp * (Q_1024_div)) >> 10) - Vlp - Volume_filter_input;
+    delta_t -= delta_t_flt;
+  }
 
-    Volume_filter_output = (int32_t(Volume_filter_output) << 7);
+  Volume_filter_output = 0;
+  if (FILTER_LP) {
+    Volume_filter_output = Volume_filter_output + Vlp;
+  }
+  if (FILTER_HP) {
+    Volume_filter_output = Volume_filter_output + Vhp;
+  }
+  if (FILTER_BP) {
+    Volume_filter_output = Volume_filter_output + Vbp;
+  }
+  //
+
+  Volume_filter_output = (int32_t(Volume_filter_output) << 7);
 
 #endif
 
-    Volume = ((Volume_filter_output + Volume_unfiltered) >> 2 ) + 0x80000;
+  Volume = ((Volume_filter_output + Volume_unfiltered) >> 2 ) + 0x80000;
 
-    if (Volume < 0) Volume = 0;
-    if (Volume > 0xfffff) Volume = 0xfffff;
+  if (Volume < 0) Volume = 0;
+  if (Volume > 0xfffff) Volume = 0xfffff;
 
-    // main_volume_32bit = ( magic_number * period * ((Volume)&0xfffff) * MASTER_VOLUME) >> 24;
-    main_volume_32bit = (Volume ) ;
-    main_volume_32bit = (main_volume_32bit * magic_number);
-    main_volume_32bit = (main_volume_32bit) >> 12;
-    main_volume_32bit = (main_volume_32bit *  MASTER_VOLUME);
-    main_volume_32bit = (main_volume_32bit * period) ;
-    main_volume_32bit = (main_volume_32bit ) >> 12;
-    main_volume = main_volume_32bit + 1;
+  // main_volume_32bit = ( magic_number * period * ((Volume)&0xfffff) * MASTER_VOLUME) >> 24;
+  main_volume_32bit = (Volume ) ;
+  main_volume_32bit = (main_volume_32bit * magic_number);
+  main_volume_32bit = (main_volume_32bit) >> 12;
+  main_volume_32bit = (main_volume_32bit *  MASTER_VOLUME);
+  main_volume_32bit = (main_volume_32bit * period) ;
+  main_volume_32bit = (main_volume_32bit ) >> 12;
+  main_volume = main_volume_32bit + 1;
 
-    OSC3 =  (OSC_3 >> 16) & 0xff; //
+  OSC3 =  (OSC_3 >> 16) & 0xff; //
+  /*
+    OSC3 =  (((OSC_3 & 0x400000) >> 11) | // OSC3 output for SID register
+             ((OSC_3 & 0x100000) >> 10) |
+             ((OSC_3 & 0x010000) >> 7) |
+             ((OSC_3 & 0x002000) >> 5) |
+             ((OSC_3 & 0x000800) >> 4) |
+             ((OSC_3 & 0x000080) >> 1) |
+             ((OSC_3 & 0x000010) << 1) |
+             ((OSC_3 & 0x000004) << 2) )&0xff;
+  */
+  //
+  ENV3 = (ADSR_volume_3) & 0xff; ; // ((Volume_3 + 0x80000) >> 12) & 0xff;
+  //
+  SID[25] = POTX;
+  SID[26] = POTY;
+  SID[27] = OSC3;
+  SID[28] = ENV3;
+
+
+
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+//
+// 50_autoconfig.ino
+//
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+uint32_t Real_uS_start;
+uint32_t Real_uS_end;
+uint32_t Emu_uS = 0;
+uint32_t Real_uS = 0 ;
+uint32_t CPU_uS = 0;
+uint32_t SID_uS = 0;
+uint32_t best_multiplier = 1;
+uint32_t estimated_frame_time = 0;
+uint32_t test_instructions = 1000;              // number of instructions to test
+
+//CPU_test();                                   // calculate how well 6502 can be emulated
+//autoconfigMultiplier();                       // calculate how long IRQ will last based on chosen microcontroller
+//benchmark();                                  // SID emulation + 6502 CPU emulation debug
+//FRAMEtest();                                  // calculate time of one emulated frame (SID emulation is ON)
+//HELP();                                       // if available free bytes , it can be added to RAM_SIZE
+
+
+
+
+inline void CPU_test () {
+
+  // needed to get CPU_us
+  //debugPrintTXTln("");
+  //debugPrintTXTln("CPU test ");
+
+  // calculate how well 6502 can be emulated
+  // CPU_test
+  reset6502(); //
+
+  Emu_uS = 0;
+  Real_uS = 0;
+  instructions = 0;
+  Real_uS_start = micros();
+  for (uint32_t total_instructions = 0; total_instructions < test_instructions; total_instructions++) {
+
+    exec6502(); // execute 1 instruction
+    Emu_uS = Emu_uS + (ticktable[opcode]);
+  }// instrucion loop
+  Real_uS_end = micros();
+  Emu_uS = Emu_uS;
+  Real_uS = Real_uS_end - Real_uS_start;
+  CPU_uS = Real_uS / test_instructions;
+
+
+  debugPrintTXTln ("");
+  debugPrintTXT   ("Microcontroller speed:");  debugPrintNUMBER(uint32_t(F_CPU / 1000000));  debugPrintTXTln (" MHz");
+  //debugPrintTXTln (" ");
+  //debugPrintTXTln ("6502 emulation only:");
+  //debugPrintTXT   ("Instructions executed:               ");
+  //debugPrintNUMBER(instructions);
+  //debugPrintTXTln  (" ");
+  //debugPrintTXT   ("Real time passed:                    ");
+  //debugPrintNUMBER(Real_uS);
+  //debugPrintTXTln (" uS");
+  //debugPrintTXT   ("Emulated time passed:                ");
+  //debugPrintNUMBER(Emu_uS);
+  //debugPrintTXTln (" uS");
+  debugPrintTXT   ("Emulated 6502 speed:");  debugPrintNUMBER(uint32_t((100 * Emu_uS) / Real_uS ));  debugPrintTXTln ("%");
+  debugPrintTXT   ("6502 instruction:   ");
+  debugPrintNUMBER(CPU_uS );
+  debugPrintTXTln (" uS");
+
+
+}
+
+inline void autoconfigMultiplier () {
+  // calculate how long IRQ will last based on chosen microcontroller
+
+  Emu_uS = 0;
+  Real_uS = 0;
+
+  multiplier = 1;
+  best_multiplier = 1;
+
+  while (best_multiplier == 1) { //
+
+    Real_uS_start = micros();
+    for (uint32_t total_instructions = 0; total_instructions < test_instructions; total_instructions++) {
+      SID_emulator();
+    }
+    Real_uS_end = micros();
+    Real_uS = Real_uS_end - Real_uS_start;
+    SID_uS = Real_uS / test_instructions;
+
+    Total_IRQ_uS = NUMBER_OF_INSTRUCTION_PER_IRQ * CPU_uS + SID_uS + GENEROUS + 0 /* irq overhead */;
+
+
+    //    estimated_frame_time = ((20000 /* ms */  / multiplier) * (SID_uS + 2 /* irq overhead */ )) + (500 /* estimated irq instructions */ * (CPU_uS + 0 /* estimated main loop overhead in uS */  )); // estimated around 500 instruction per frame (20mS) should be enough for calculations
+
+    estimated_frame_time = ((20000 /* ms */  / multiplier) * (  Total_IRQ_uS  )) ;
+
+
+
+
+    // enable this if raw values are needed during calculations (in case to manualy find perfect <multiplier> value )
+
     /*
-      OSC3 =  (((OSC_3 & 0x400000) >> 11) | // OSC3 output for SID register
-               ((OSC_3 & 0x100000) >> 10) |
-               ((OSC_3 & 0x010000) >> 7) |
-               ((OSC_3 & 0x002000) >> 5) |
-               ((OSC_3 & 0x000800) >> 4) |
-               ((OSC_3 & 0x000080) >> 1) |
-               ((OSC_3 & 0x000010) << 1) |
-               ((OSC_3 & 0x000004) << 2) )&0xff;
+      debugPrintTXT("SID emulation: ");
+      debugPrintNUMBER(Real_uS);
+      debugPrintTXT(" uS passed. ");
+      debugPrintTXT("Around: ");
+      debugPrintNUMBER(Total_IRQ_uS);
+      debugPrintTXT(" uS per irq, ");
+      debugPrintTXT("at multiplier: ");
+      debugPrintNUMBER(multiplier);
+      debugPrintTXT(". Estimated emulated IRQ time: ");
+      debugPrintNUMBER(estimated_frame_time);
+      debugPrintTXTln("uS.");
     */
-    //
-    ENV3 = (ADSR_volume_3) & 0xff; ; // ((Volume_3 + 0x80000) >> 12) & 0xff;
-    //
-    SID[25] = POTX;
-    SID[26] = POTY;
-    SID[27] = OSC3;
-    SID[28] = ENV3;
 
+    if (estimated_frame_time < 13000) { // worst case: 13000 for bluepill at 48MHz, O0 (smallest code) optimatization (best case is same as emulated uS)
+      best_multiplier = multiplier ;
+    }
 
+    multiplier++;
+    if (multiplier > 248) {
+      multiplier = 248;
+      best_multiplier = multiplier; // if it's not found by now, then take worst case.
+    }
+  }
+  multiplier = best_multiplier; // or edit manually here
 
+  debugPrintTXT    ("SID emulator IRQ:  ");  debugPrintNUMBER (SID_uS);  debugPrintTXTln  (" uS ");
+  debugPrintTXT    ("Estimated IRQ time:");  debugPrintNUMBER (Total_IRQ_uS);  debugPrintTXTln  (" uS ");
+  debugPrintTXT    ("Optimal multiplier:");  debugPrintNUMBER (multiplier);  debugPrintTXTln  (" (uS) ");
+  debugPrintTXT    ("Samplerate:        ");  debugPrintNUMBER (uint32_t(1000000 / multiplier));  debugPrintTXTln  (" Hz ");
+
+  if (multiplier < 12) {
+    period = multiplier;
+  }
+  else {
+    period = 4; // for now, , maybe i'll leave at starting value (but it must be less then multiplier)
   }
 
-  //////////////////////////////////////////////////////////////////////////////////////////////
-  //
-  // 50_autoconfig.ino
-  //
-  //////////////////////////////////////////////////////////////////////////////////////////////
+}
 
-  uint32_t Real_uS_start;
-  uint32_t Real_uS_end;
-  uint32_t Emu_uS = 0;
-  uint32_t Real_uS = 0 ;
-  uint32_t CPU_uS = 0;
-  uint32_t SID_uS = 0;
-  uint32_t best_multiplier = 1;
-  uint32_t estimated_frame_time = 0;
-  uint32_t test_instructions = 1000;              // number of instructions to test
+/*
+  inline void FRAMEtest () {
+    // calculate time of one emulated frame (SID emulation is ON)
+    reset6502();
 
-  //CPU_test();                                   // calculate how well 6502 can be emulated
-  //autoconfigMultiplier();                       // calculate how long IRQ will last based on chosen microcontroller
-  //benchmark();                                  // SID emulation + 6502 CPU emulation debug
-  //FRAMEtest();                                  // calculate time of one emulated frame (SID emulation is ON)
-  //HELP();                                       // if available free bytes , it can be added to RAM_SIZE
-
-
-
-
-  inline void CPU_test () {
-
-    // needed to get CPU_us
-    //debugPrintTXTln("");
-    //debugPrintTXTln("CPU test ");
-
-    // calculate how well 6502 can be emulated
-    // CPU_test
-    reset6502(); //
+    while (JSR1003 == 0) { // skip first JSR$1003
+      exec6502();
+    }
 
     Emu_uS = 0;
     Real_uS = 0;
     instructions = 0;
     Real_uS_start = micros();
-    for (uint32_t total_instructions = 0; total_instructions < test_instructions; total_instructions++) {
+
+    JSR1003 = 0;
+    while (JSR1003 == 0) { // now do 1 frame to measure timing
 
       exec6502(); // execute 1 instruction
       Emu_uS = Emu_uS + (ticktable[opcode]);
-    }// instrucion loop
+
+    }
+
     Real_uS_end = micros();
-    Emu_uS = Emu_uS;
     Real_uS = Real_uS_end - Real_uS_start;
-    CPU_uS = Real_uS / test_instructions;
 
-
-    debugPrintTXTln ("");
-    debugPrintTXT   ("Microcontroller speed:");  debugPrintNUMBER(uint32_t(F_CPU / 1000000));  debugPrintTXTln (" MHz");
-    //debugPrintTXTln (" ");
-    //debugPrintTXTln ("6502 emulation only:");
-    //debugPrintTXT   ("Instructions executed:               ");
-    //debugPrintNUMBER(instructions);
-    //debugPrintTXTln  (" ");
-    //debugPrintTXT   ("Real time passed:                    ");
-    //debugPrintNUMBER(Real_uS);
-    //debugPrintTXTln (" uS");
-    //debugPrintTXT   ("Emulated time passed:                ");
-    //debugPrintNUMBER(Emu_uS);
-    //debugPrintTXTln (" uS");
-    debugPrintTXT   ("Emulated 6502 speed:");  debugPrintNUMBER(uint32_t((100 * Emu_uS) / Real_uS ));  debugPrintTXTln ("%");
-    debugPrintTXT   ("6502 instruction:   ");
-    debugPrintNUMBER(CPU_uS );
-    debugPrintTXTln (" uS");
-
-
-  }
-
-  inline void autoconfigMultiplier () {
-    // calculate how long IRQ will last based on chosen microcontroller
-
+    debugPrintTXTln  ("");
+    debugPrintTXTln  ("Frame Test");
+    debugPrintTXT    ("Instructions executed: ");  debugPrintNUMBER (instructions);  debugPrintTXTln  ("");
+    debugPrintTXT    ("Frame time (real):     ");  debugPrintNUMBER (uint32_t(Real_uS));  debugPrintTXTln  ("uS ");
+    debugPrintTXT    ("Frame time (emulated): ");  debugPrintNUMBER (uint32_t(Emu_uS));  debugPrintTXTln  ("uS ");
+    debugPrintTXT    ("Emulated frame speed:  ");  debugPrintNUMBER (uint32_t((100 * Emu_uS) / Real_uS ));  debugPrintTXTln  ("%");
     Emu_uS = 0;
     Real_uS = 0;
 
-    multiplier = 1;
-    best_multiplier = 1;
-
-    while (best_multiplier == 1) { //
-
-      Real_uS_start = micros();
-      for (uint32_t total_instructions = 0; total_instructions < test_instructions; total_instructions++) {
-        SID_emulator();
-      }
-      Real_uS_end = micros();
-      Real_uS = Real_uS_end - Real_uS_start;
-      SID_uS = Real_uS / test_instructions;
-
-      Total_IRQ_uS = NUMBER_OF_INSTRUCTION_PER_IRQ * CPU_uS + SID_uS + GENEROUS + 0 /* irq overhead */;
+  }
+*/
+//////////////////////////////////////////////////////////////////////////////////////////////
+//
+// 60_barebone_sounds.ino
+//
+//////////////////////////////////////////////////////////////////////////////////////////////
 
 
-      //    estimated_frame_time = ((20000 /* ms */  / multiplier) * (SID_uS + 2 /* irq overhead */ )) + (500 /* estimated irq instructions */ * (CPU_uS + 0 /* estimated main loop overhead in uS */  )); // estimated around 500 instruction per frame (20mS) should be enough for calculations
+void error_sound_SD() {
 
-      estimated_frame_time = ((20000 /* ms */  / multiplier) * (  Total_IRQ_uS  )) ;
+  reset_SID();
+
+  OSC_1_HiLo = 0xffff; // just having fun with globals here :-)
+  MASTER_VOLUME  = 0x0f;
+  ADSR_Attack_1  = 0x09;
+  ADSR_Decay_1  = 0x07;
+  ADSR_Sustain_1 = 0x06;
+  ADSR_Release_1 = 0x0b;
+  PW_HiLo_voice_1 = 0x400;
+  //sawtooth_bit_voice_1=1;
+  triangle_bit_voice_1 = 1;
+  pulse_bit_voice_1 = 1;
+  Gate_bit_1 = 1;
+  delay(480);
+  OSC_1_HiLo = 0xf000;
+  Gate_bit_1 = 0;
+  delay(4000);
+}
 
 
 
+inline void error_sound_ROOT() {
 
-      // enable this if raw values are needed during calculations (in case to manualy find perfect <multiplier> value )
+  reset_SID();
 
-      /*
-        debugPrintTXT("SID emulation: ");
-        debugPrintNUMBER(Real_uS);
-        debugPrintTXT(" uS passed. ");
-        debugPrintTXT("Around: ");
-        debugPrintNUMBER(Total_IRQ_uS);
-        debugPrintTXT(" uS per irq, ");
-        debugPrintTXT("at multiplier: ");
-        debugPrintNUMBER(multiplier);
-        debugPrintTXT(". Estimated emulated IRQ time: ");
-        debugPrintNUMBER(estimated_frame_time);
-        debugPrintTXTln("uS.");
-      */
+  OSC_1_HiLo = 0x1000; // just having fun with globals here :-)
+  MASTER_VOLUME  = 0x0f;
+  ADSR_Attack_1  = 0x09;
+  ADSR_Decay_1  = 0x07;
+  ADSR_Sustain_1 = 0x06;
+  ADSR_Release_1 = 0x0b;
+  PW_HiLo_voice_1 = 0x400;
+  //sawtooth_bit_voice_1=1;
+  triangle_bit_voice_1 = 1;
+  pulse_bit_voice_1 = 1;
+  Gate_bit_1 = 1;
+  delay(480);
+  OSC_1_HiLo = 0x0800;
+  Gate_bit_1 = 0;
+  delay(1000);
 
-      if (estimated_frame_time < 13000) { // worst case: 13000 for bluepill at 48MHz, O0 (smallest code) optimatization (best case is same as emulated uS)
-        best_multiplier = multiplier ;
-      }
+}
 
-      multiplier++;
-      if (multiplier > 248) {
-        multiplier = 248;
-        best_multiplier = multiplier; // if it's not found by now, then take worst case.
-      }
+
+inline void error_open_file() {
+
+  reset_SID();
+
+  OSC_1_HiLo = 0xc000;
+  MASTER_VOLUME  = 0x0f;
+  ADSR_Attack_1  = 0x00;
+  ADSR_Decay_1  = 0x00;
+  ADSR_Sustain_1 = 0x0f;
+  ADSR_Release_1 = 0x05;
+  PW_HiLo_voice_1 = 0x400;
+  //sawtooth_bit_voice_1=1;
+  // triangle_bit_voice_1 = 1;
+  //pulse_bit_voice_1 = 1;
+  noise_bit_voice_1;
+  Gate_bit_1 = 1;
+  delay(480);
+  OSC_1_HiLo = 0xc800;
+  Gate_bit_1 = 0;
+  delay(480);
+
+}
+
+
+inline void error_open_folder () {
+
+  reset_SID();
+
+  OSC_1_HiLo = 0x2000; // just having fun with globals here :-)
+  MASTER_VOLUME  = 0x0f;
+  ADSR_Attack_1  = 0x09;
+  ADSR_Decay_1  = 0x07;
+  ADSR_Sustain_1 = 0x06;
+  ADSR_Release_1 = 0x0b;
+  PW_HiLo_voice_1 = 0x400;
+  //sawtooth_bit_voice_1=1;
+  triangle_bit_voice_1 = 1;
+  pulse_bit_voice_1 = 1;
+  Gate_bit_1 = 1;
+  delay(480);
+  OSC_1_HiLo = 0x1000;
+  Gate_bit_1 = 0;
+
+  delay(1000);
+}
+
+inline void error_open_sid () {
+
+  reset_SID();
+
+  OSC_1_HiLo = 0x4000;
+  MASTER_VOLUME  = 0x0f;
+  ADSR_Attack_1  = 0x0b;
+  ADSR_Decay_1  = 0x08;
+  ADSR_Sustain_1 = 0x06;
+  ADSR_Release_1 = 0x0b;
+  PW_HiLo_voice_1 = 0x400;
+  //sawtooth_bit_voice_1=1;
+  triangle_bit_voice_1 = 1;
+  pulse_bit_voice_1 = 1;
+  Gate_bit_1 = 1;
+  delay(1500);
+  OSC_1_HiLo = 0x3f00;
+  Gate_bit_1 = 0;
+  Gate_bit_2 = 0;
+  Gate_bit_3 = 0;
+  for (int oscup = 0; oscup > 4000; oscup++) {
+    OSC_1_HiLo = oscup;
+    delay(1);
+  }
+}
+
+inline void error_PSID_V2_RAM_OVERFLOW () {
+
+  reset_SID();
+
+  OSC_1_HiLo = 0x4000; // barebone sound
+  MASTER_VOLUME  = 0x0f;
+  ADSR_Attack_1  = 0x0b;
+  ADSR_Decay_1  = 0x08;
+  ADSR_Sustain_1 = 0x06;
+  ADSR_Release_1 = 0x0b;
+  PW_HiLo_voice_1 = 0x400;
+  //sawtooth_bit_voice_1=1;
+  triangle_bit_voice_1 = 1;
+  pulse_bit_voice_1 = 1;
+  Gate_bit_1 = 1;
+  delay(1500);
+  OSC_1_HiLo = 0x3f00;
+  Gate_bit_1 = 0;
+  Gate_bit_2 = 0;
+  Gate_bit_3 = 0;
+
+  for (int oscdown = 4000; oscdown > 0; oscdown = oscdown - 2) {
+    OSC_1_HiLo = oscdown;
+    delay(1);
+  }
+}
+
+inline void reset_SID() {
+
+
+  OSC_1_HiLo = 0;
+  PW_HiLo_voice_1 = 0;
+  noise_bit_voice_1 = 0;
+  pulse_bit_voice_1 = 0;
+  sawtooth_bit_voice_1 = 0;
+  triangle_bit_voice_1 = 0;
+  test_bit_voice_1   = 0;
+  ring_bit_voice_1   = 0;
+  SYNC_bit_voice_1 = 0;
+  Gate_bit_1 = 0;
+  ADSR_Attack_1 = 0;
+  ADSR_Decay_1 = 0;
+  ADSR_Sustain_1 = 0;
+  ADSR_Release_1 = 0;
+  OSC_2_HiLo = 0;
+  OSC_2_HiLo = 0;
+  PW_HiLo_voice_2 = 0;
+  noise_bit_voice_2 = 0;
+  pulse_bit_voice_2 = 0;
+  sawtooth_bit_voice_2 = 0;
+  triangle_bit_voice_2 = 0;
+  test_bit_voice_2   = 0;
+  ring_bit_voice_2 = 0;
+  SYNC_bit_voice_2 = 0;
+  Gate_bit_2 = 0;
+  ADSR_Attack_2 = 0;
+  ADSR_Decay_2 = 0;
+  ADSR_Sustain_2 = 0;
+  ADSR_Release_2 = 0;
+  OSC_3_HiLo = 0;
+  PW_HiLo_voice_3 = 0;
+  noise_bit_voice_3 = 0;
+  pulse_bit_voice_3 = 0;
+  sawtooth_bit_voice_3 = 0;
+  triangle_bit_voice_3 = 0;
+  test_bit_voice_3  = 0;
+  ring_bit_voice_3 = 0;
+  SYNC_bit_voice_3 = 0;
+  Gate_bit_3 = 0;
+  ADSR_Attack_3 = 0;
+  ADSR_Decay_3 = 0;
+  ADSR_Sustain_3 = 0;
+  ADSR_Release_3 = 0;
+  FILTER_HiLo = 0;
+  FILTER_Resonance = 0;
+  FILTER_Enable_1 =  0;
+  FILTER_Enable_2 = 0;
+  FILTER_Enable_3 = 0;
+  FILTER_Enable_EXT = 0;
+  FILTER_Enable_switch = 0;
+  OFF3 =  0;
+  FILTER_HP =  0;
+  FILTER_BP =  0;
+  FILTER_LP =  0;
+  MASTER_VOLUME =   0;
+
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+//
+// 70_SIDinfo.ino
+//
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+
+char  SIDinfo_filetype [8] ;
+char  SIDinfo_name [33] ;
+char  SIDinfo_author [33] ;
+char  SIDinfo_released [33] ;
+char  SIDinfo_VIDEO [14] ;
+char  SIDinfo_CLOCK [7] ;
+char  SIDinfo_PLAYABLE [6];
+char  SIDinfo_MODEL [20];
+char  SIDinfo_PLAYLIST [10];
+char  SIDinfo_RANDOM [4];
+
+void  infoSID() {
+
+  // - PSID (0x50534944)
+  // - RSID (0x52534944)
+
+  strcpy (SIDinfo_filetype, "UNKNOWN"); // if PSID/RSID check fail
+
+  if ( (PEEK (0x380 + 00) == 0x50) & (PEEK (0x380 + 01) == 0x53) & (PEEK (0x380 + 02) == 0x49) & (PEEK (0x380 + 03) == 0x44) ) {
+    strcpy (SIDinfo_filetype, "PSID");
+  }
+
+  if ( (PEEK (0x380 + 00) == 0x52) & (PEEK (0x380 + 01) == 0x53) & (PEEK (0x380 + 02) == 0x49) & (PEEK (0x380 + 03) == 0x44) ) {
+    strcpy (SIDinfo_filetype, "RSID");
+  }
+
+  strcpy (SIDinfo_name, "");
+  for (int cc = 0; cc < 0x20; cc = cc + 1) {
+    SIDinfo_name[cc] = (PEEK (0x380 + 0x16 + cc));
+    if (cc == 0x1f) {
+      SIDinfo_name[0x20] = 0; // null terminating string
     }
-    multiplier = best_multiplier; // or edit manually here
+  }
+  strcpy (SIDinfo_author, "");
+  for (int cc = 0; cc < 0x20; cc = cc + 1) {
+    SIDinfo_author[cc] = (PEEK (0x380 + 0x36 + cc));
+    if (cc == 0x1f) {
+      SIDinfo_author[0x20] = 0; // null terminating string
+    }
+  }
+  strcpy (SIDinfo_released, "");
+  for (int cc = 0; cc < 0x20; cc = cc + 1) {
+    SIDinfo_released[cc] = (PEEK (0x380 + 0x56 + cc));
+    if (cc == 0x1f) {
+      SIDinfo_released[0x20] = 0; // null terminating string
+    }
+  }
 
-    debugPrintTXT    ("SID emulator IRQ:  ");  debugPrintNUMBER (SID_uS);  debugPrintTXTln  (" uS ");
-    debugPrintTXT    ("Estimated IRQ time:");  debugPrintNUMBER (Total_IRQ_uS);  debugPrintTXTln  (" uS ");
-    debugPrintTXT    ("Optimal multiplier:");  debugPrintNUMBER (multiplier);  debugPrintTXTln  (" (uS) ");
-    debugPrintTXT    ("Samplerate:        ");  debugPrintNUMBER (uint32_t(1000000 / multiplier));  debugPrintTXTln  (" Hz ");
 
-    if (multiplier < 12) {
-      period = multiplier;
+  switch (VIDEO_TYPE) {
+    case 0:
+      strcpy (SIDinfo_VIDEO, "UNKNOWN");
+      break;
+    case 1:
+      strcpy (SIDinfo_VIDEO, "PAL");
+      break;
+    case 2:
+      strcpy (SIDinfo_VIDEO, "NTSC");
+      break;
+    case 3:
+      strcpy (SIDinfo_VIDEO, "PAL and NTSC");
+      break;
+
+  }
+  switch (SUBTUNE_SPEED) {
+    case 0:
+      strcpy (SIDinfo_CLOCK, "VIC II");
+      break;
+    case 1:
+      strcpy (SIDinfo_CLOCK, "CIA");
+      break;
+  }
+
+  if (PLAYABLE_SID) {
+    strcpy (SIDinfo_PLAYABLE, "OK");
+  } else {
+    strcpy (SIDinfo_PLAYABLE, "ERROR");
+  }
+
+  switch (MODEL_TYPE) {
+    case 0:
+      strcpy (SIDinfo_MODEL, "UNKNOWN");
+      break;
+    case 1:
+      strcpy (SIDinfo_MODEL, "MOS6581");
+      break;
+    case 2:
+      strcpy (SIDinfo_MODEL, "MOS8580");
+      break;
+    case 3:
+      strcpy (SIDinfo_MODEL, "MOS6581 and MOS8580");
+      break;
+  }
+  /*
+    if (favorites_finished) {
+      strcpy (SIDinfo_PLAYLIST, "HVSC");
     }
     else {
-      period = 4; // for now, , maybe i'll leave at starting value (but it must be less then multiplier)
-    }
-
-  }
-
-  /*
-    inline void FRAMEtest () {
-      // calculate time of one emulated frame (SID emulation is ON)
-      reset6502();
-
-      while (JSR1003 == 0) { // skip first JSR$1003
-        exec6502();
-      }
-
-      Emu_uS = 0;
-      Real_uS = 0;
-      instructions = 0;
-      Real_uS_start = micros();
-
-      JSR1003 = 0;
-      while (JSR1003 == 0) { // now do 1 frame to measure timing
-
-        exec6502(); // execute 1 instruction
-        Emu_uS = Emu_uS + (ticktable[opcode]);
-
-      }
-
-      Real_uS_end = micros();
-      Real_uS = Real_uS_end - Real_uS_start;
-
-      debugPrintTXTln  ("");
-      debugPrintTXTln  ("Frame Test");
-      debugPrintTXT    ("Instructions executed: ");  debugPrintNUMBER (instructions);  debugPrintTXTln  ("");
-      debugPrintTXT    ("Frame time (real):     ");  debugPrintNUMBER (uint32_t(Real_uS));  debugPrintTXTln  ("uS ");
-      debugPrintTXT    ("Frame time (emulated): ");  debugPrintNUMBER (uint32_t(Emu_uS));  debugPrintTXTln  ("uS ");
-      debugPrintTXT    ("Emulated frame speed:  ");  debugPrintNUMBER (uint32_t((100 * Emu_uS) / Real_uS ));  debugPrintTXTln  ("%");
-      Emu_uS = 0;
-      Real_uS = 0;
-
+      strcpy (SIDinfo_PLAYLIST, "FAVORITES");
     }
   */
-  //////////////////////////////////////////////////////////////////////////////////////////////
-  //
-  // 60_barebone_sounds.ino
-  //
-  //////////////////////////////////////////////////////////////////////////////////////////////
-
-
-  void error_sound_SD() {
-
-    reset_SID();
-
-    OSC_1_HiLo = 0xffff; // just having fun with globals here :-)
-    MASTER_VOLUME  = 0x0f;
-    ADSR_Attack_1  = 0x09;
-    ADSR_Decay_1  = 0x07;
-    ADSR_Sustain_1 = 0x06;
-    ADSR_Release_1 = 0x0b;
-    PW_HiLo_voice_1 = 0x400;
-    //sawtooth_bit_voice_1=1;
-    triangle_bit_voice_1 = 1;
-    pulse_bit_voice_1 = 1;
-    Gate_bit_1 = 1;
-    delay(480);
-    OSC_1_HiLo = 0xf000;
-    Gate_bit_1 = 0;
-    delay(4000);
-  }
-
-
-
-  inline void error_sound_ROOT() {
-
-    reset_SID();
-
-    OSC_1_HiLo = 0x1000; // just having fun with globals here :-)
-    MASTER_VOLUME  = 0x0f;
-    ADSR_Attack_1  = 0x09;
-    ADSR_Decay_1  = 0x07;
-    ADSR_Sustain_1 = 0x06;
-    ADSR_Release_1 = 0x0b;
-    PW_HiLo_voice_1 = 0x400;
-    //sawtooth_bit_voice_1=1;
-    triangle_bit_voice_1 = 1;
-    pulse_bit_voice_1 = 1;
-    Gate_bit_1 = 1;
-    delay(480);
-    OSC_1_HiLo = 0x0800;
-    Gate_bit_1 = 0;
-    delay(1000);
-
-  }
-
-
-  inline void error_open_file() {
-
-    reset_SID();
-
-    OSC_1_HiLo = 0xc000;
-    MASTER_VOLUME  = 0x0f;
-    ADSR_Attack_1  = 0x00;
-    ADSR_Decay_1  = 0x00;
-    ADSR_Sustain_1 = 0x0f;
-    ADSR_Release_1 = 0x05;
-    PW_HiLo_voice_1 = 0x400;
-    //sawtooth_bit_voice_1=1;
-    // triangle_bit_voice_1 = 1;
-    //pulse_bit_voice_1 = 1;
-    noise_bit_voice_1;
-    Gate_bit_1 = 1;
-    delay(480);
-    OSC_1_HiLo = 0xc800;
-    Gate_bit_1 = 0;
-    delay(480);
-
-  }
-
-
-  inline void error_open_folder () {
-
-    reset_SID();
-
-    OSC_1_HiLo = 0x2000; // just having fun with globals here :-)
-    MASTER_VOLUME  = 0x0f;
-    ADSR_Attack_1  = 0x09;
-    ADSR_Decay_1  = 0x07;
-    ADSR_Sustain_1 = 0x06;
-    ADSR_Release_1 = 0x0b;
-    PW_HiLo_voice_1 = 0x400;
-    //sawtooth_bit_voice_1=1;
-    triangle_bit_voice_1 = 1;
-    pulse_bit_voice_1 = 1;
-    Gate_bit_1 = 1;
-    delay(480);
-    OSC_1_HiLo = 0x1000;
-    Gate_bit_1 = 0;
-
-    delay(1000);
-  }
-
-  inline void error_open_sid () {
-
-    reset_SID();
-
-    OSC_1_HiLo = 0x4000;
-    MASTER_VOLUME  = 0x0f;
-    ADSR_Attack_1  = 0x0b;
-    ADSR_Decay_1  = 0x08;
-    ADSR_Sustain_1 = 0x06;
-    ADSR_Release_1 = 0x0b;
-    PW_HiLo_voice_1 = 0x400;
-    //sawtooth_bit_voice_1=1;
-    triangle_bit_voice_1 = 1;
-    pulse_bit_voice_1 = 1;
-    Gate_bit_1 = 1;
-    delay(1500);
-    OSC_1_HiLo = 0x3f00;
-    Gate_bit_1 = 0;
-    Gate_bit_2 = 0;
-    Gate_bit_3 = 0;
-    for (int oscup = 0; oscup > 4000; oscup++) {
-      OSC_1_HiLo = oscup;
-      delay(1);
-    }
-  }
-
-  inline void error_PSID_V2_RAM_OVERFLOW () {
-
-    reset_SID();
-
-    OSC_1_HiLo = 0x4000; // barebone sound
-    MASTER_VOLUME  = 0x0f;
-    ADSR_Attack_1  = 0x0b;
-    ADSR_Decay_1  = 0x08;
-    ADSR_Sustain_1 = 0x06;
-    ADSR_Release_1 = 0x0b;
-    PW_HiLo_voice_1 = 0x400;
-    //sawtooth_bit_voice_1=1;
-    triangle_bit_voice_1 = 1;
-    pulse_bit_voice_1 = 1;
-    Gate_bit_1 = 1;
-    delay(1500);
-    OSC_1_HiLo = 0x3f00;
-    Gate_bit_1 = 0;
-    Gate_bit_2 = 0;
-    Gate_bit_3 = 0;
-
-    for (int oscdown = 4000; oscdown > 0; oscdown = oscdown - 2) {
-      OSC_1_HiLo = oscdown;
-      delay(1);
-    }
-  }
-
-  inline void reset_SID() {
-
-
-    OSC_1_HiLo = 0;
-    PW_HiLo_voice_1 = 0;
-    noise_bit_voice_1 = 0;
-    pulse_bit_voice_1 = 0;
-    sawtooth_bit_voice_1 = 0;
-    triangle_bit_voice_1 = 0;
-    test_bit_voice_1   = 0;
-    ring_bit_voice_1   = 0;
-    SYNC_bit_voice_1 = 0;
-    Gate_bit_1 = 0;
-    ADSR_Attack_1 = 0;
-    ADSR_Decay_1 = 0;
-    ADSR_Sustain_1 = 0;
-    ADSR_Release_1 = 0;
-    OSC_2_HiLo = 0;
-    OSC_2_HiLo = 0;
-    PW_HiLo_voice_2 = 0;
-    noise_bit_voice_2 = 0;
-    pulse_bit_voice_2 = 0;
-    sawtooth_bit_voice_2 = 0;
-    triangle_bit_voice_2 = 0;
-    test_bit_voice_2   = 0;
-    ring_bit_voice_2 = 0;
-    SYNC_bit_voice_2 = 0;
-    Gate_bit_2 = 0;
-    ADSR_Attack_2 = 0;
-    ADSR_Decay_2 = 0;
-    ADSR_Sustain_2 = 0;
-    ADSR_Release_2 = 0;
-    OSC_3_HiLo = 0;
-    PW_HiLo_voice_3 = 0;
-    noise_bit_voice_3 = 0;
-    pulse_bit_voice_3 = 0;
-    sawtooth_bit_voice_3 = 0;
-    triangle_bit_voice_3 = 0;
-    test_bit_voice_3  = 0;
-    ring_bit_voice_3 = 0;
-    SYNC_bit_voice_3 = 0;
-    Gate_bit_3 = 0;
-    ADSR_Attack_3 = 0;
-    ADSR_Decay_3 = 0;
-    ADSR_Sustain_3 = 0;
-    ADSR_Release_3 = 0;
-    FILTER_HiLo = 0;
-    FILTER_Resonance = 0;
-    FILTER_Enable_1 =  0;
-    FILTER_Enable_2 = 0;
-    FILTER_Enable_3 = 0;
-    FILTER_Enable_EXT = 0;
-    FILTER_Enable_switch = 0;
-    OFF3 =  0;
-    FILTER_HP =  0;
-    FILTER_BP =  0;
-    FILTER_LP =  0;
-    MASTER_VOLUME =   0;
-
-  }
-
-
-
-  //////////////////////////////////////////////////////////////////////////////////////////////
-  //
-  // 70_SIDinfo.ino
-  //
-  //////////////////////////////////////////////////////////////////////////////////////////////
-
-
-  char  SIDinfo_filetype [8] ;
-  char  SIDinfo_name [33] ;
-  char  SIDinfo_author [33] ;
-  char  SIDinfo_released [33] ;
-  char  SIDinfo_VIDEO [14] ;
-  char  SIDinfo_CLOCK [7] ;
-  char  SIDinfo_PLAYABLE [6];
-  char  SIDinfo_MODEL [20];
-  char  SIDinfo_PLAYLIST [10];
-  char  SIDinfo_RANDOM [4];
-
-  void  infoSID() {
-
-    // - PSID (0x50534944)
-    // - RSID (0x52534944)
-
-    strcpy (SIDinfo_filetype, "UNKNOWN"); // if PSID/RSID check fail
-
-    if ( (PEEK (0x380 + 00) == 0x50) & (PEEK (0x380 + 01) == 0x53) & (PEEK (0x380 + 02) == 0x49) & (PEEK (0x380 + 03) == 0x44) ) {
-      strcpy (SIDinfo_filetype, "PSID");
-    }
-
-    if ( (PEEK (0x380 + 00) == 0x52) & (PEEK (0x380 + 01) == 0x53) & (PEEK (0x380 + 02) == 0x49) & (PEEK (0x380 + 03) == 0x44) ) {
-      strcpy (SIDinfo_filetype, "RSID");
-    }
-
-    strcpy (SIDinfo_name, "");
-    for (int cc = 0; cc < 0x20; cc = cc + 1) {
-      SIDinfo_name[cc] = (PEEK (0x380 + 0x16 + cc));
-      if (cc == 0x1f) {
-        SIDinfo_name[0x20] = 0; // null terminating string
-      }
-    }
-    strcpy (SIDinfo_author, "");
-    for (int cc = 0; cc < 0x20; cc = cc + 1) {
-      SIDinfo_author[cc] = (PEEK (0x380 + 0x36 + cc));
-      if (cc == 0x1f) {
-        SIDinfo_author[0x20] = 0; // null terminating string
-      }
-    }
-    strcpy (SIDinfo_released, "");
-    for (int cc = 0; cc < 0x20; cc = cc + 1) {
-      SIDinfo_released[cc] = (PEEK (0x380 + 0x56 + cc));
-      if (cc == 0x1f) {
-        SIDinfo_released[0x20] = 0; // null terminating string
-      }
-    }
-
-
-    switch (VIDEO_TYPE) {
-      case 0:
-        strcpy (SIDinfo_VIDEO, "UNKNOWN");
-        break;
-      case 1:
-        strcpy (SIDinfo_VIDEO, "PAL");
-        break;
-      case 2:
-        strcpy (SIDinfo_VIDEO, "NTSC");
-        break;
-      case 3:
-        strcpy (SIDinfo_VIDEO, "PAL and NTSC");
-        break;
-
-    }
-    switch (SUBTUNE_SPEED) {
-      case 0:
-        strcpy (SIDinfo_CLOCK, "VIC II");
-        break;
-      case 1:
-        strcpy (SIDinfo_CLOCK, "CIA");
-        break;
-    }
-
-    if (PLAYABLE_SID) {
-      strcpy (SIDinfo_PLAYABLE, "OK");
-    } else {
-      strcpy (SIDinfo_PLAYABLE, "ERROR");
-    }
-
-    switch (MODEL_TYPE) {
-      case 0:
-        strcpy (SIDinfo_MODEL, "UNKNOWN");
-        break;
-      case 1:
-        strcpy (SIDinfo_MODEL, "MOS6581");
-        break;
-      case 2:
-        strcpy (SIDinfo_MODEL, "MOS8580");
-        break;
-      case 3:
-        strcpy (SIDinfo_MODEL, "MOS6581 and MOS8580");
-        break;
-    }
-    /*
-      if (favorites_finished) {
-        strcpy (SIDinfo_PLAYLIST, "HVSC");
-      }
-      else {
-        strcpy (SIDinfo_PLAYLIST, "FAVORITES");
-      }
-    */
-    /*
-      if (RANDOM_FOLDERS) {
-        strcpy (SIDinfo_RANDOM, "ON");
-
-      }
-      else {
-        strcpy (SIDinfo_RANDOM, "OFF");
-      }
-    */
-
-    debugPrintTXTln ("");
-    //  debugPrintTXTln ("--------------------------------------------------------------------");
-    //  debugPrintTXT   (">"); debugPrintTXT  (SID_DIR_name); debugPrintTXTln ("");
-    //  debugPrintTXT   (">"); debugPrintTXT  (SID_filename); debugPrintTXTln ("");
-    debugPrintTXTln ("--------------------------------------------------------------------");
-    debugPrintTXT   ("Player:    "); debugPrintTXT  (SIDinfo_PLAYABLE); debugPrintTXTln ("");
-    debugPrintTXT   ("Size:      "); debugPrintNUMBER(SID_data_size); debugPrintTXT(" bytes"); debugPrintTXTln (" ");
-    debugPrintTXT   ("Type:      "); debugPrintTXT (SIDinfo_filetype); debugPrintTXTln ("");
-    debugPrintTXT   ("Name:      "); debugPrintTXT (SIDinfo_name); debugPrintTXTln ("");
-    debugPrintTXT   ("Author:    "); debugPrintTXT (SIDinfo_author); debugPrintTXTln ("");
-    debugPrintTXT   ("Released:  "); debugPrintTXT (SIDinfo_released); debugPrintTXTln ("");
-    debugPrintTXT   ("Range:     "); debugPrintNUMBERHEX(SID_load_start); debugPrintTXT(" - "); debugPrintNUMBERHEX(SID_load_end); debugPrintTXTln ("");
-    delay(1);
-    debugPrintTXT   ("Init:      "); debugPrintNUMBERHEX(SID_init); debugPrintTXTln ("");
-    debugPrintTXT   ("Play:      "); debugPrintNUMBERHEX(SID_play); debugPrintTXTln ("");
-    debugPrintTXT   ("Video:     "); debugPrintTXT   (SIDinfo_VIDEO); debugPrintTXTln ("");
-    debugPrintTXT   ("Clock:     "); debugPrintTXT   (SIDinfo_CLOCK); debugPrintTXTln ("");
-    debugPrintTXT   ("SID model: "); debugPrintTXT   (SIDinfo_MODEL); debugPrintTXTln ("");
-    //  debugPrintTXT   ("Playlist:  "); debugPrintTXT   (SIDinfo_PLAYLIST); debugPrintTXTln ("");
-    //  debugPrintTXT   ("Random   : "); debugPrintTXT   (SIDinfo_RANDOM); debugPrintTXTln ("");
-    debugPrintTXT   ("Tune:      "); debugPrintNUMBER(SID_current_tune); debugPrintTXT   ("/"); debugPrintNUMBER(SID_number_of_tunes); debugPrintTXT   (" ("); debugPrintNUMBER(SID_default_tune); debugPrintTXT   (")") ; debugPrintTXTln ("");
-    debugPrintTXTln ("");
-  }
-
-
-  // calculate free unused RAM
-  void HELP () {
-    debugPrintTXTln  ("");
-    debugPrintTXT    ("  **** STM32 SID PLAYER ****    ");
-    debugPrintTXTln  ("");
-    debugPrintNUMBER ((RAM_SIZE >> 10) + 1);
-    debugPrintTXT    ("K RAM SYSTEM  ");
-    debugPrintNUMBER (FreeBytes());
-    debugPrintTXT    (" BYTES FREE");
-    debugPrintTXTln  ("");
-    debugPrintNUMBER (uint32_t(1000000 / multiplier));
-    debugPrintTXT    ("Hz Sample ");
-    debugPrintNUMBER (uint32_t( (1000000 / period) / 1000));
-    debugPrintTXTln  ("KHz PWM frequency");
-    debugPrintTXTln  ("");
-
-    debugPrintTXTln  ("- 1 click  - next tune");
-    debugPrintTXTln  ("- 2 clicks - next tune");
-    debugPrintTXTln  ("- 3 clicks - next tune");
-    debugPrintTXTln  ("- 4 clicks - show HELP");
-    debugPrintTXTln  ("- 5 clicks - SID info ");
-    //  debugPrintTXTln  ("- 6 clicks - switch  playlist folder ( FAVORITE/HVSC ) ");
-    //  debugPrintTXTln  ("- 7 clicks - random ON/OFF");
-    debugPrintTXTln  ("- holding  - fast forward     (play tune as fast as possible)");
-
-
-    debugPrintTXTln  ("");
-    debugPrintTXTln  ("READY.");
-  }
-
-  //////////////////////////////////////////////////////////////////////////////////////////////
-  //
-  // 80_buttons.ino
-  //
-  //////////////////////////////////////////////////////////////////////////////////////////////
-
   /*
-    // 0=idle, 1,2,3,4...=short clicks,  -1=is_pressed
-    //                                             - 1 short click  - play next tune
-    //                                             - 2 short clicks - play next tune
-    //                                             - 3 short clicks - play next tune
-    //                                             - 4 short clicks - show HELP (on any output defined)
-    //                                             - 5 short clicks - show info about sid file (on any output defined)
-    //                                             - 6 short clicks -
-    //                                             - 7 short clicks -
-    //                                             - button holding - play tune as fast as possible (fast forward)
-    int16_t buttonState;
-    uint32_t BT_time_start;
-    uint32_t BT_time_end;
-    uint32_t BT_previous_time;
-    uint32_t BT_curent_time;
-    int16_t state = HIGH;
-    int16_t prevState = HIGH;
-    int16_t clickCount = 0;
-    int buttonValue = 0;
+    if (RANDOM_FOLDERS) {
+      strcpy (SIDinfo_RANDOM, "ON");
 
-
-    uint32_t BT_debounce_time = 100;
-    uint32_t BT_short_click_time = 650;
-    uint32_t BT_is_pressed_time = 1500;
-    uint32_t BT_short_click_lag_time = 333;
-
-    int GetButtonStatus() {
-
-    state = digitalRead(BUTTON_1);
-    BT_curent_time = millis();
-
-    if (state != prevState) { // debounce
-      if ( (BT_curent_time - BT_previous_time) > BT_debounce_time) {
-        BT_previous_time = BT_curent_time;
-      }
-      else {
-        state = prevState;
-      }
     }
-
-    if ( prevState == HIGH && state == HIGH   ) {
-
-      if (  ((BT_curent_time - BT_time_end) > BT_short_click_lag_time )  ) { // button is "sensed" after timing out, so it have little "lag"
-        buttonValue = clickCount;
-        clickCount = 0; // reset clickCount if short click timed out
-      }
-    }
-
-    if ( prevState == HIGH  && state == LOW) { // button just pressed, just memorize time of a event
-      BT_time_start = BT_curent_time;
-      prevState = state;
-    }
-
-    if (prevState == LOW && state == LOW   ) {
-      prevState = state;
-      if (BT_curent_time > (BT_time_start + BT_is_pressed_time)) {
-        clickCount = 0; //
-        buttonValue =  -1; // is_pressed
-      }
-    }
-
-    if ( prevState == LOW  && state == HIGH ) { // button released
-      BT_time_end = BT_curent_time;
-      prevState = state;
-      if (  ((BT_time_end - BT_time_start) < BT_short_click_time)  ) {
-        clickCount++;
-        buttonValue = 0; //                                                            will keep counting clicks
-      }
-
-      if (((BT_time_end - BT_time_start)  > BT_is_pressed_time) ) {
-        clickCount = 0;
-        buttonValue = 0; //                                                             it was is_pressed so far, ignore release
-      }
-    }
-
-
-
-    return buttonValue;
-    }
-
-    void checkButton1() {
-
-    switch ( GetButtonStatus() ) {
-
-      case 0:
-        // tralalala
-        break;
-      case -1:
-        // 3s long press and holding - play tune as fast as possible (fast forward)
-        VIC_irq_request = 1;
-        break;
-
-      case 1:
-        // 1 short click - play next tune
-        play_next_tune = true;
-        tune_play_counter = 0;
-        delay(100);
-        break;
-
-      case 2:
-        // two clicks - play next tune
-        play_next_tune = true;
-        tune_play_counter = 0;
-        delay(100);
-        break;
-
-      case 3:
-        // 3 clicks - play next tune
-        play_next_tune = true;
-        tune_play_counter = 0;
-        delay(100);
-        break;
-
-      case 4:
-        // 4 clicks - show HELP
-        HELP();
-        break;
-
-      case 5:
-        // 5 clicks -  show info about sid file
-        infoSID();
-        break;
-
-      case 6:
-        // 6 clicks -
-        // tralala
-        break;
-
-      case 7:
-        // 7 clicks -  switch between random and alphabetical playlist
-        // tralala
-        break;
-    }
+    else {
+      strcpy (SIDinfo_RANDOM, "OFF");
     }
   */
 
-  //////////////////////////////////////////////////////////////////////////////////////////////
-  //
-  // 90_debug.ino
-  //
-  //////////////////////////////////////////////////////////////////////////////////////////////
+  debugPrintTXTln ("");
+  //  debugPrintTXTln ("--------------------------------------------------------------------");
+  //  debugPrintTXT   (">"); debugPrintTXT  (SID_DIR_name); debugPrintTXTln ("");
+  //  debugPrintTXT   (">"); debugPrintTXT  (SID_filename); debugPrintTXTln ("");
+  debugPrintTXTln ("--------------------------------------------------------------------");
+  debugPrintTXT   ("Player:    "); debugPrintTXT  (SIDinfo_PLAYABLE); debugPrintTXTln ("");
+  debugPrintTXT   ("Size:      "); debugPrintNUMBER(SID_data_size); debugPrintTXT(" bytes"); debugPrintTXTln (" ");
+  debugPrintTXT   ("Type:      "); debugPrintTXT (SIDinfo_filetype); debugPrintTXTln ("");
+  debugPrintTXT   ("Name:      "); debugPrintTXT (SIDinfo_name); debugPrintTXTln ("");
+  debugPrintTXT   ("Author:    "); debugPrintTXT (SIDinfo_author); debugPrintTXTln ("");
+  debugPrintTXT   ("Released:  "); debugPrintTXT (SIDinfo_released); debugPrintTXTln ("");
+  debugPrintTXT   ("Range:     "); debugPrintNUMBERHEX(SID_load_start); debugPrintTXT(" - "); debugPrintNUMBERHEX(SID_load_end); debugPrintTXTln ("");
+  delay(1);
+  debugPrintTXT   ("Init:      "); debugPrintNUMBERHEX(SID_init); debugPrintTXTln ("");
+  debugPrintTXT   ("Play:      "); debugPrintNUMBERHEX(SID_play); debugPrintTXTln ("");
+  debugPrintTXT   ("Video:     "); debugPrintTXT   (SIDinfo_VIDEO); debugPrintTXTln ("");
+  debugPrintTXT   ("Clock:     "); debugPrintTXT   (SIDinfo_CLOCK); debugPrintTXTln ("");
+  debugPrintTXT   ("SID model: "); debugPrintTXT   (SIDinfo_MODEL); debugPrintTXTln ("");
+  //  debugPrintTXT   ("Playlist:  "); debugPrintTXT   (SIDinfo_PLAYLIST); debugPrintTXTln ("");
+  //  debugPrintTXT   ("Random   : "); debugPrintTXT   (SIDinfo_RANDOM); debugPrintTXTln ("");
+  debugPrintTXT   ("Tune:      "); debugPrintNUMBER(SID_current_tune); debugPrintTXT   ("/"); debugPrintNUMBER(SID_number_of_tunes); debugPrintTXT   (" ("); debugPrintNUMBER(SID_default_tune); debugPrintTXT   (")") ; debugPrintTXTln ("");
+  debugPrintTXTln ("");
+}
 
 
-  //  from SDfat library
-  extern "C" char* sbrk(int incr);
-  // free RAM (actually, free stack
-  inline uint32_t FreeBytes() {
-    char top = 't';
-    return &top - reinterpret_cast<char*>(sbrk(0));
+// calculate free unused RAM
+void HELP () {
+  debugPrintTXTln  ("");
+  debugPrintTXT    ("  **** STM32 SID PLAYER ****    ");
+  debugPrintTXTln  ("");
+  debugPrintNUMBER ((RAM_SIZE >> 10) + 1);
+  debugPrintTXT    ("K RAM SYSTEM  ");
+  debugPrintNUMBER (FreeBytes());
+  debugPrintTXT    (" BYTES FREE");
+  debugPrintTXTln  ("");
+  debugPrintNUMBER (uint32_t(1000000 / multiplier));
+  debugPrintTXT    ("Hz Sample ");
+  debugPrintNUMBER (uint32_t( (1000000 / period) / 1000));
+  debugPrintTXTln  ("KHz PWM frequency");
+  debugPrintTXTln  ("");
+
+  debugPrintTXTln  ("- 1 click  - next tune");
+  debugPrintTXTln  ("- 2 clicks - next tune");
+  debugPrintTXTln  ("- 3 clicks - next tune");
+  debugPrintTXTln  ("- 4 clicks - show HELP");
+  debugPrintTXTln  ("- 5 clicks - SID info ");
+  //  debugPrintTXTln  ("- 6 clicks - switch  playlist folder ( FAVORITE/HVSC ) ");
+  //  debugPrintTXTln  ("- 7 clicks - random ON/OFF");
+  debugPrintTXTln  ("- holding  - fast forward     (play tune as fast as possible)");
+
+
+  debugPrintTXTln  ("");
+  debugPrintTXTln  ("READY.");
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+//
+// 80_buttons.ino
+//
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+/*
+  // 0=idle, 1,2,3,4...=short clicks,  -1=is_pressed
+  //                                             - 1 short click  - play next tune
+  //                                             - 2 short clicks - play next tune
+  //                                             - 3 short clicks - play next tune
+  //                                             - 4 short clicks - show HELP (on any output defined)
+  //                                             - 5 short clicks - show info about sid file (on any output defined)
+  //                                             - 6 short clicks -
+  //                                             - 7 short clicks -
+  //                                             - button holding - play tune as fast as possible (fast forward)
+  int16_t buttonState;
+  uint32_t BT_time_start;
+  uint32_t BT_time_end;
+  uint32_t BT_previous_time;
+  uint32_t BT_curent_time;
+  int16_t state = HIGH;
+  int16_t prevState = HIGH;
+  int16_t clickCount = 0;
+  int buttonValue = 0;
+
+
+  uint32_t BT_debounce_time = 100;
+  uint32_t BT_short_click_time = 650;
+  uint32_t BT_is_pressed_time = 1500;
+  uint32_t BT_short_click_lag_time = 333;
+
+  int GetButtonStatus() {
+
+  state = digitalRead(BUTTON_1);
+  BT_curent_time = millis();
+
+  if (state != prevState) { // debounce
+    if ( (BT_curent_time - BT_previous_time) > BT_debounce_time) {
+      BT_previous_time = BT_curent_time;
+    }
+    else {
+      state = prevState;
+    }
   }
 
-  // set serial
-  inline void debugInit () {
+  if ( prevState == HIGH && state == HIGH   ) {
+
+    if (  ((BT_curent_time - BT_time_end) > BT_short_click_lag_time )  ) { // button is "sensed" after timing out, so it have little "lag"
+      buttonValue = clickCount;
+      clickCount = 0; // reset clickCount if short click timed out
+    }
+  }
+
+  if ( prevState == HIGH  && state == LOW) { // button just pressed, just memorize time of a event
+    BT_time_start = BT_curent_time;
+    prevState = state;
+  }
+
+  if (prevState == LOW && state == LOW   ) {
+    prevState = state;
+    if (BT_curent_time > (BT_time_start + BT_is_pressed_time)) {
+      clickCount = 0; //
+      buttonValue =  -1; // is_pressed
+    }
+  }
+
+  if ( prevState == LOW  && state == HIGH ) { // button released
+    BT_time_end = BT_curent_time;
+    prevState = state;
+    if (  ((BT_time_end - BT_time_start) < BT_short_click_time)  ) {
+      clickCount++;
+      buttonValue = 0; //                                                            will keep counting clicks
+    }
+
+    if (((BT_time_end - BT_time_start)  > BT_is_pressed_time) ) {
+      clickCount = 0;
+      buttonValue = 0; //                                                             it was is_pressed so far, ignore release
+    }
+  }
+
+
+
+  return buttonValue;
+  }
+
+  void checkButton1() {
+
+  switch ( GetButtonStatus() ) {
+
+    case 0:
+      // tralalala
+      break;
+    case -1:
+      // 3s long press and holding - play tune as fast as possible (fast forward)
+      VIC_irq_request = 1;
+      break;
+
+    case 1:
+      // 1 short click - play next tune
+      play_next_tune = true;
+      tune_play_counter = 0;
+      delay(100);
+      break;
+
+    case 2:
+      // two clicks - play next tune
+      play_next_tune = true;
+      tune_play_counter = 0;
+      delay(100);
+      break;
+
+    case 3:
+      // 3 clicks - play next tune
+      play_next_tune = true;
+      tune_play_counter = 0;
+      delay(100);
+      break;
+
+    case 4:
+      // 4 clicks - show HELP
+      HELP();
+      break;
+
+    case 5:
+      // 5 clicks -  show info about sid file
+      infoSID();
+      break;
+
+    case 6:
+      // 6 clicks -
+      // tralala
+      break;
+
+    case 7:
+      // 7 clicks -  switch between random and alphabetical playlist
+      // tralala
+      break;
+  }
+  }
+*/
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+//
+// 90_debug.ino
+//
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+// set serial
+inline void debugInit () {
 
 #ifdef USE_SERIAL
-    Serial.begin(SERIAL_SPEED); // while (!Serial) {    yield();  }
+  Serial.begin(SERIAL_SPEED); // while (!Serial) {    yield();  }
 #endif
 #ifdef USE_SERIAL1
-    Serial1.begin(SERIAL_SPEED); //while (!Serial1) {    yield();  }
+  Serial1.begin(SERIAL_SPEED); //while (!Serial1) {    yield();  }
 #endif
-    delay(2000);
-  }
-  //  Serial.print
-  inline void debugPrintTXT (const char* output) {
+  delay(2000);
+}
+//  Serial.print
+inline void debugPrintTXT (const char* output) {
 #ifdef USE_SERIAL
-    Serial.print(output);
+  Serial.print(output);
 #endif
 
 #ifdef USE_SERIAL1
-    Serial1.print(output);
+  Serial1.print(output);
 #endif
-  }
+}
 
-  //  Serial.println
-  inline void debugPrintTXTln (const char* output) {
+//  Serial.println
+inline void debugPrintTXTln (const char* output) {
 #ifdef USE_SERIAL
-    Serial.println(output);
+  Serial.println(output);
 #endif
 #ifdef USE_SERIAL1
-    Serial1.println(output);
+  Serial1.println(output);
 #endif
-  }
+}
 
-  //  Serial.print
-  inline void debugPrintNUMBER (const int32_t output) {
+//  Serial.print
+inline void debugPrintNUMBER (const int32_t output) {
 #ifdef USE_SERIAL
-    Serial.print(output);
+  Serial.print(output);
 #endif
 
 #ifdef USE_SERIAL1
-    Serial1.print(output);
+  Serial1.print(output);
 #endif
-  }
+}
 
-  //  Serial.print(nn,HEX)
-  inline void debugPrintNUMBERHEX (const int32_t output) {
+//  Serial.print(nn,HEX)
+inline void debugPrintNUMBERHEX (const int32_t output) {
 #ifdef USE_SERIAL
-    Serial.print("$");
-    Serial.print(output, HEX);
+  Serial.print("$");
+  Serial.print(output, HEX);
 #endif
 
 #ifdef USE_SERIAL1
-    Serial1.print("$");
-    Serial1.print(output, HEX);
+  Serial1.print("$");
+  Serial1.print(output, HEX);
 #endif
-  }
+}
 
 
 
 
-  // name z_ so Arduino IDE will have this ino file loaded last, after all other definitions and voids
+// name z_ so Arduino IDE will have this ino file loaded last, after all other definitions and voids
 
 
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////
-  //
-  // setup
-  //
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////
-  void setup() {
-
-
-
-    // pinMode(PB13, OUTPUT);
-    // pinMode(PB12, OUTPUT);
-    randomSeed(millis());
-    debugInit(); // in 90_debug.ino
-    Loader(); // in 10_INTERNAL.ino
-    CPU_test(); // benchmark 6502 emulator timing
-    autoconfigMultiplier(); // benchmark SID emulator timing, set multiplier
-
-    Tune = SID_current_tune;
-    previous_Tune = Tune;
-
-
-    infoSID(); // print out info on any output that is defined
-    InitHardware(); // Setup timers and interrupts
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// setup
+//
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+void setup() {
 
 
 
-    MySetup();
+  // pinMode(PB13, OUTPUT);
+  // pinMode(PB12, OUTPUT);
+  randomSeed(millis());
+  AllocateRAM();                     // in 02_ram.ino     // allocate available memory (max 65535), leave 2048 bytes for locals
+
+  debugInit(); // in 90_debug.ino
+  Loader(); // in 10_INTERNAL.ino
+  CPU_test(); // benchmark 6502 emulator timing
+  autoconfigMultiplier(); // benchmark SID emulator timing, set multiplier
+
+  Tune = SID_current_tune;
+  previous_Tune = Tune;
 
 
-  }
+  infoSID(); // print out info on any output that is defined
+  InitHardware(); // Setup timers and interrupts
 
 
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////
-  //
-  // main loop
-  //
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  MySetup();
 
 
-  void loop() {
+}
 
-    MyLoop();
 
-  }
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// main loop
+//
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void loop() {
+
+  MyLoop();
+
+}
 #endif
 
 
 
-  // INFO:
+// INFO:
 
-  //      - only music based on raster irq (PSID V2+) (play address must not be 0, will not work with custom music player inside .sid file)
-  //      - multi-speed .sid files are not supported, ( emulation of 6502 is not fast enough to keep up ).
-  //      - .sid load address must be at $0400 or greater
-  //      - total size of .sid file must be less then 8192 bytes
-  //
-  // STM32F103C8
-  // This project is purely for my own entertainment , so WITHOUT ANY WARRANTY!
-  // I had tried to make it as much as posible to be portable for other microcontrollers
-  // My choise of STM32F103C8 is only because of it's price
-  // in bluepill's RAM, player is at 0x300, .sid file data is at 0x400 (if microcontrollers RAM is less then end of memory address of sid file, otherwise file data is in it's original memory address)
-  // tunes that work with it are in /tunes/f103/ subfolder
-
-
-  // STM32F401CC board:
-  //
-  // next cheapest microcontroller. Much more RAM, but not full 65536 bytes. Around $D800 is last address that can be used (tunes that have higher end address will  be relocated)
-  // tunes that work with it are in /f401 subfolder. Ofcorse, if tune in /f103 subfolder works on f103 microcontoller, it will work on f401 microcontoller too
-
-  // STM32F411CC board:
-  // Next in line of cheap microcontroller boards. Full 64K of RAM for emulator. (I personally overclocked mine to 110MHz, no USB serial, but Serial on PA9/PA10 works fine)
+//      - only music based on raster irq (PSID V2+) (play address must not be 0, will not work with custom music player inside .sid file)
+//      - multi-speed .sid files are not supported, ( emulation of 6502 is not fast enough to keep up ).
+//      - .sid load address must be at $0400 or greater
+//      - total size of .sid file must be less then 8192 bytes
+//
+// STM32F103C8
+// This project is purely for my own entertainment , so WITHOUT ANY WARRANTY!
+// I had tried to make it as much as posible to be portable for other microcontrollers
+// My choise of STM32F103C8 is only because of it's price
+// in bluepill's RAM, player is at 0x300, .sid file data is at 0x400 (if microcontrollers RAM is less then end of memory address of sid file, otherwise file data is in it's original memory address)
+// tunes that work with it are in /tunes/f103/ subfolder
 
 
+// STM32F401CC board:
+//
+// next cheapest microcontroller. Much more RAM, but not full 65536 bytes. Around $D800 is last address that can be used (tunes that have higher end address will  be relocated)
+// tunes that work with it are in /f401 subfolder. Ofcorse, if tune in /f103 subfolder works on f103 microcontoller, it will work on f401 microcontoller too
+
+// STM32F411CC board:
+// Next in line of cheap microcontroller boards. Full 64K of RAM for emulator. (I personally overclocked mine to 110MHz, no USB serial, but Serial on PA9/PA10 works fine)
 
 
 
-  // SCHEMATICS:
-  //
-  //
-  //    .-----------------.
-  //    |                 |
-  //    | STM32FxxxXXxx   |
-  //    .------------|----.
-  //     |G         P|
-  //     |N         A|
-  //     |D         8--R1----|------C2---------|
-  //     |                   |                 --
-  //     |                   C                 || P1
-  //     |                   1                 ||<--------- OUDIO OUT
-  //     |                   |                 --
-  //     .-------------------|------------------|---------- GND
-  //                        GND
-  //    R1 = 100-500 Ohm
-  //    C1 = 100 nF
-  //    C2 = 10 uF
-  //    P1 = 10KOhm potentiometer
-  //
-  // If <period> is 1 , AUDIO OUT can be connected to PA8 (no need for R1,C1 ). I don't think 1Mhz sample rate will be in hearing range
+
+
+// SCHEMATICS:
+//
+//
+//    .-----------------.
+//    |                 |
+//    | STM32FxxxXXxx   |
+//    .------------|----.
+//     |G         P|
+//     |N         A|
+//     |D         8--R1----|------C2---------|
+//     |                   |                 --
+//     |                   C                 || P1
+//     |                   1                 ||<--------- OUDIO OUT
+//     |                   |                 --
+//     .-------------------|------------------|---------- GND
+//                        GND
+//    R1 = 100-500 Ohm
+//    C1 = 100 nF
+//    C2 = 10 uF
+//    P1 = 10KOhm potentiometer
+//
+// If <period> is 1 , AUDIO OUT can be connected to PA8 (no need for R1,C1 ). I don't think 1Mhz sample rate will be in hearing range

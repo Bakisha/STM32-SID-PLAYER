@@ -7,8 +7,8 @@
 
 #include"Commando.h"
 
-#define GENEROUS  0; // set amount of uS per IRQ that generously will be given to your sketch (greater the number, your sketch will run faster, but sound quality will degrade )
-
+#define GENEROUS  0 // set amount of uS per IRQ that generously will be given to your sketch (greater the number, your sketch will run faster, but sound quality will degrade )
+#define FREE_RAM  2048  // set amount of ram that will be available to your sketch (the more ram you have, smaller sid file can be played) // default 2048
 volatile uint8_t Tune = 0; // in this global variable will be tune number currently playing when you sketch start. Use it to change tune number playing.
 
 //////////////////////////////////////////////////////////////////////////////////////////////

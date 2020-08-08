@@ -8,7 +8,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // Choose your board and upload method from menu
-// Choose available RAM for emulator (depending of microcontroller) (currently set for BluePill - STM32F103C8, ROGER's or STM32Duino core )
+
 // it's strongly recommended to set optimatization on FASTEST -O3 (from tool menu of Arduino IDE).
 
 // STM32-SID-Player : https://github.com/Bakisha/STM32-SID-PLAYER
@@ -21,7 +21,6 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-#define RAM_SIZE 0x2400                 // ---> IMPORTANT! <--- Set this value based on microcontroller used. maximum is 65535 bytes ( 0xFFFF HEX ) or available microcontoller's RAM
 #define TUNE_PLAY_TIME 350              // Can't implement songlenghts, manual values are needed (in seconds)//  TODO: try to determine silence in output, and skip to next tune
 
 
@@ -124,12 +123,24 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
+//  from SDfat library
+extern "C" char* sbrk(int incr);
+// free RAM (actually, free stack
+inline uint32_t FreeBytes() {
+  char top = 't';
+  return &top - reinterpret_cast<char*>(sbrk(0));
+}
+
+
+
+
 #if defined(SPI_RAM)
 // TODO
 #elif defined(PARALLEL_SRAM)
 // TODO
 #else
-uint8_t RAM[RAM_SIZE];
+uint16_t RAM_SIZE = 0;
+uint8_t * RAM = NULL;
 #endif
 
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -1395,12 +1406,23 @@ const uint8_t ticktable[256] = {
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
+
 #if defined(SPI_RAM)
 // TODO
 #elif defined(PARALLEL_SRAM)
 // TODO
 #else
 // internal RAM
+
+void AllocateRAM() {
+  if ((FreeBytes()) > 0xffff ) {
+    RAM_SIZE = 0xffff;
+  }
+  else {
+    RAM_SIZE = FreeBytes() - FREE_RAM;
+  }
+  RAM = (uint8_t*) calloc(RAM_SIZE, sizeof(uint8_t)); // allocate memory
+}
 
 inline void POKE (uint16_t addr , uint8_t bytE ) {
 
@@ -3314,8 +3336,8 @@ inline void player_setup() {
 void irq_handler(void) { //
 
 
-    SetAUDIO(); // in 20_hardware.ino
-    //   digitalWrite(PB13, HIGH);
+  SetAUDIO(); // in 20_hardware.ino
+  //   digitalWrite(PB13, HIGH);
 
     VIC_irq = VIC_irq + multiplier;
     if (VIC_irq >= SID_speed) {
@@ -3364,12 +3386,12 @@ void irq_handler(void) { //
         }
         previous_Tune = Tune;
       }
-      set_tune_speed ();
-      //infoSID();
-      play_next_tune = false; // set speed and play next tune
-      reset6502();
-      reset_SID();
-      POKE (0x0304, SID_current_tune - 1 ); // player's address for init tune
+    reset_SID();
+    set_tune_speed ();
+    //infoSID();
+    play_next_tune = false; // set speed and play next tune
+    reset6502();
+    POKE (0x0304, SID_current_tune - 1 ); // player's address for init tune
 
     } // play next tune check
 
@@ -3406,6 +3428,7 @@ void irq_handler(void) { //
 
 
 
+   
     OSC_MSB_Previous_1 = OSC_MSB_1;
     OSC_MSB_Previous_2 = OSC_MSB_2;
     OSC_MSB_Previous_3 = OSC_MSB_3;
@@ -4887,13 +4910,7 @@ void irq_handler(void) { //
   //////////////////////////////////////////////////////////////////////////////////////////////
 
 
-  //  from SDfat library
-  extern "C" char* sbrk(int incr);
-  // free RAM (actually, free stack
-  inline uint32_t FreeBytes() {
-    char top = 't';
-    return &top - reinterpret_cast<char*>(sbrk(0));
-  }
+
 
   // set serial
   inline void debugInit () {
@@ -4969,6 +4986,8 @@ void irq_handler(void) { //
     // pinMode(PB13, OUTPUT);
     // pinMode(PB12, OUTPUT);
     randomSeed(millis());
+ AllocateRAM();                     // in 02_ram.ino     // allocate available memory (max 65535), leave 2048 bytes for locals
+
     debugInit(); // in 90_debug.ino
     Loader(); // in 10_INTERNAL.ino
     CPU_test(); // benchmark 6502 emulator timing
