@@ -1,9 +1,9 @@
 // Choose your board and upload method from menu
-// Choose available RAM for emulator (depending of microcontroller) (currently set for BluePill - STM32F103C8, ROGER's or STM32Duino core )
+
 // it's strongly recommended to set optimatization on FASTEST -O3 (from tool menu of Arduino IDE).
 
 // STM32-SID-Player : https://github.com/Bakisha/STM32-SID-PLAYER
-// HVSC database: https://www.hvsc.c64.org/ (download and unpack to SD Card)
+// HVSC database: https://www.hvsc.c64.org/ 
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -12,7 +12,6 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-#define RAM_SIZE 0x3000                 // ---> IMPORTANT! <--- Set this value based on microcontroller used. maximum is 65535 bytes ( 0xFFFF HEX ) or available microcontoller's RAM
 #define TUNE_PLAY_TIME 360              // Can't implement songlenghts, manual values are needed (in seconds)//  TODO: try to determine silence in output, and skip to next tune
 
 
@@ -33,7 +32,7 @@
 #define AUDIO_OUT       PA8                 // can't be changed, this is just reminder 
 
 #define USE_SERIAL                          // for debugging info on Serial (usually USB Serial), uncomment if it's needed
-//#define USE_SERIAL1                         // for debugging info on Serial1 (usually on PA9/PA10), uncomment if it's needed
+#define USE_SERIAL1                         // for debugging info on Serial1 (usually on PA9/PA10), uncomment if it's needed
 #define SERIAL_SPEED 9600                   // Speed of serial connection
 
 
