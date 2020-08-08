@@ -1,19 +1,9 @@
 // Choose your board and upload method from menu
-// Choose available RAM for emulator (depending of microcontroller) (currently set for BluePill - STM32F103C8, ROGER's or STM32Duino core )
+
 // it's strongly recommended to set optimatization on FASTEST -O3 (from tool menu of Arduino IDE).
 
 //                                                  STM32-SID-Player:     https://github.com/Bakisha/STM32-SID-PLAYER
 //                                                  HVSC database:        https://www.hvsc.c64.org/downloads (download and unpack to SD Card)
-
-
-////////////////////////////////////////////////////////////////////////////////////////////
-//
-//           emulator settings
-//
-//////////////////////////////////////////////////////////////////////////////////////////////
-
-#define RAM_SIZE 0x3000                 // ---> IMPORTANT! <--- Set this value based on microcontroller used. maximum is 65535 bytes ( 0xFFFF HEX ) or available microcontoller's RAM (leave at least 2000 bytes free )
-#define TUNE_PLAY_TIME 215              // Can't implement songlenghts, manual values are needed (in seconds)//  TODO: try to determine silence in output, and skip to next tune
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -21,6 +11,8 @@
 //           Player configuration:
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
+
+#define TUNE_PLAY_TIME 215                               // Can't implement songlenghts, manual values are needed (in seconds)//  TODO: try to determine silence in output, and skip to next tune
 
 const char * const HVSC = "HVSC" ;                   // ---> IMPORTANT! <---  name of HVSC SID Collection folder on your SD Card ("HVSC", "C64Music", "/" or "" for root, etc"
 
@@ -105,12 +97,13 @@ bool RANDOM_FOLDERS = false;                      // - play folders playlist in 
 
 #define USE_FILTERS                        // uncomment for testing, irq is  faster in calculations (so multiplier will be smaller, and samplerate will be higher)
 
-#define FILTER_SENSITIVITY  4              // Lower is better. Best is 1.  It will consume irq time , but FILTER_FREQUENCY can be set much higher
-#define FILTER_FREQUENCY 12500             // You'll know it if it's very high (it will totaly ruin sound)
+#define FILTER_SENSITIVITY  4              // Lower is better. Best is 1.  It will consume irq time (smaller samplerate) , but FILTER_FREQUENCY can be set much higher
+#define FILTER_FREQUENCY 12500              // You'll know it if it's very high (it will totaly ruin sound)
 
 //                                            Play with these two values to determine what is "SID-like" sound
 //                                            NOTE: Filters are linear in all frequencies range. Don't ask for true filters emulation, i'm suprised i managed to emulate it at all :-)
-//                                         --------------------------------------------
+//                                         NOTE2: lower FILTER_FREQUENCY is similar to 6581 SID chip, higher value (12500 and above) is more like 8581 SID chip.
+//                                         .--------------------------------------------.
 //                                         |                      |  maximum            |
 //                                         |  FILTER_SENSITIVITY  |  FILTER_FREQUENCY   |
 //                                         ----------------------------------------------

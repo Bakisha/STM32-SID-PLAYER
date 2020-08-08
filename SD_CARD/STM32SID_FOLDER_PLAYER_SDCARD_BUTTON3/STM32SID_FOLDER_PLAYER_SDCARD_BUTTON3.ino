@@ -1,18 +1,10 @@
 // Choose your board and upload method from menu
-// Choose available RAM for emulator (depending of microcontroller) (currently set for BluePill - STM32F103C8, ROGER's or STM32Duino core )
+
 // it's strongly recommended to set optimatization on FASTEST -O3 (from tool menu of Arduino IDE).
 
 //                                                  STM32-SID-Player:     https://github.com/Bakisha/STM32-SID-PLAYER
 //                                                  HVSC database:        https://www.hvsc.c64.org/downloads (download and unpack to SD Card)
 
-
-////////////////////////////////////////////////////////////////////////////////////////////
-//
-//           emulator settings
-//
-//////////////////////////////////////////////////////////////////////////////////////////////
-
-#define RAM_SIZE 0x3000                                  // ---> IMPORTANT! <--- Set this value based on microcontroller used. maximum is 65535 bytes ( 0xFFFF HEX ) or available microcontoller's RAM (leave at least 2000 bytes free )
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -231,6 +223,11 @@ const char * const FOLDER_PLAYLIST                       //  set favorite direct
   |  |   ------ SD_CLK     /SW    / SW   /SW               1                 ||<----------------| OUDIO OUT
   |  ---------- CS_SDARD  |      |      |                  |                 --
   .-----------------------+------+------+------------------+-----------------|------------------| GND
+  R1 = 100-500 Ohm
+  C1 = 10-100 nF
+  C2 = 10 uF
+  P1 = 10KOhm potentiometer
+
 
 
 

@@ -59,7 +59,7 @@ inline void error_open_file() {
   //sawtooth_bit_voice_1=1;
   // triangle_bit_voice_1 = 1;
   //pulse_bit_voice_1 = 1;
-  noise_bit_voice_1;
+  noise_bit_voice_1=1;
   Gate_bit_1 = 1;
   delay(480);
   OSC_1_HiLo = 0xc800;

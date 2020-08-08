@@ -1,11 +1,3 @@
-//  from SDfat library
-extern "C" char* sbrk(int incr);
-// free RAM (actually, free stack
-inline uint32_t FreeBytes() {
-  char top = 't';
-  return &top - reinterpret_cast<char*>(sbrk(0));
-}
-
 
 
 // set serial

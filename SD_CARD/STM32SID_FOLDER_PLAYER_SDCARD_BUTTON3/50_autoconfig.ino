@@ -84,20 +84,20 @@ inline void autoconfigMultiplier () {
       best_multiplier = multiplier ;
     }
     // enable this if raw values are needed during calculations (in case to manualy find perfect <multiplier> value )
-    /*
-         debugPrintTXTln("Testing SID Emulator");
-         debugPrintTXT("SID emulation: ");
-         debugPrintNUMBER(Real_uS);
-         debugPrintTXT(" uS passed. ");
-         debugPrintTXT("Around: ");
-         debugPrintNUMBER(SID_uS);
-         debugPrintTXT(" uS per irq, ");
-         debugPrintTXT("at multiplier: ");
-         debugPrintNUMBER(multiplier);
-         debugPrintTXT(". Estimated emulated IRQ time: ");
-         debugPrintNUMBER(estimated_frame_time);
-         debugPrintTXTln("uS.");
-    */
+
+//             debugPrintTXTln("Testing SID Emulator");
+//             debugPrintTXT("SID emulation: ");
+//             debugPrintNUMBER(Real_uS);
+//             debugPrintTXT(" uS passed. ");
+//             debugPrintTXT("Around: ");
+//             debugPrintNUMBER(SID_uS);
+//             debugPrintTXT(" uS per irq, ");
+//             debugPrintTXT("at multiplier: ");
+//             debugPrintNUMBER(multiplier);
+//             debugPrintTXT(". Estimated emulated IRQ time: ");
+//             debugPrintNUMBER(estimated_frame_time);
+//             debugPrintTXTln("uS.");
+
     multiplier++;
     if (multiplier > 248) {
       multiplier = 248;

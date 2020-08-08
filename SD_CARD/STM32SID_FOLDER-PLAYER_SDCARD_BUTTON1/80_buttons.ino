@@ -130,7 +130,7 @@ void checkButton1() {
 #ifdef NUMBER_OF_ALL_FOLDERS // if HVSC folder is included
       favorites_finished =   !favorites_finished ;
 #endif
-      current_folder = 0;      
+      current_folder = 0;
       play_next_folder = true;
       load_next_file = true;
       play_next_tune = false;

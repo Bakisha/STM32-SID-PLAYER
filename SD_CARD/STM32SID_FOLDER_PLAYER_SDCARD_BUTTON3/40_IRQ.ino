@@ -24,9 +24,9 @@ void irq_handler(void) { //
     change_tune = true;
     player = false;
   }
-
-  SID_emulator();
-
+    if ( player == true ) { // not when loading
+    SID_emulator();
+  }
 
   STAD4XX = 0;
 }
@@ -382,14 +382,14 @@ inline void SID_emulator() {
               ADSR_volume_1 = 0;
             }
 
-            if (ADSR_volume_1 <= (( ADSR_Sustain_1 << 4) + ADSR_Sustain_1)) {
+            if (ADSR_volume_1 <= uint16_t(( ADSR_Sustain_1 << 4) + ADSR_Sustain_1)) {
               ADSR_volume_1 = (( ADSR_Sustain_1 << 4) + ADSR_Sustain_1);
               LFSR15_comparator_value_1 = ADSR_LFSR15[ADSR_Release_1   ];
               ADSR_stage_1 = 3;
             }
             break;
           case 3:
-            if (ADSR_volume_1 > (( ADSR_Sustain_1 << 4) + ADSR_Sustain_1)) {
+            if (ADSR_volume_1 >  uint16_t(( ADSR_Sustain_1 << 4) + ADSR_Sustain_1)) {
               ADSR_stage_1 = 2;
               LFSR15_comparator_value_1 = ADSR_LFSR15[ADSR_Decay_1   ];
             }
@@ -488,14 +488,14 @@ inline void SID_emulator() {
             else {
               ADSR_volume_2 = 0;
             }
-            if (ADSR_volume_2 <= (( ADSR_Sustain_2 << 4) + ADSR_Sustain_2)) {
+            if (ADSR_volume_2 <=  uint16_t(( ADSR_Sustain_2 << 4) + ADSR_Sustain_2)) {
               ADSR_volume_2 = (( ADSR_Sustain_2 << 4) + ADSR_Sustain_2);
               LFSR15_comparator_value_2 = ADSR_LFSR15[ADSR_Release_2   ];
               ADSR_stage_2 = 3;
             }
             break;
           case 3:
-            if (ADSR_volume_2 > (( ADSR_Sustain_2 << 4) + ADSR_Sustain_2)) {
+            if (ADSR_volume_2 >  uint16_t(( ADSR_Sustain_2 << 4) + ADSR_Sustain_2)) {
               ADSR_stage_2 = 2;
               LFSR15_comparator_value_2 = ADSR_LFSR15[ADSR_Decay_2   ];
             }
@@ -585,14 +585,14 @@ inline void SID_emulator() {
             else {
               ADSR_volume_3 = 0;
             }
-            if (ADSR_volume_3 <= (( ADSR_Sustain_3 << 4) + ADSR_Sustain_3)) {
+            if (ADSR_volume_3 <=  uint16_t(( ADSR_Sustain_3 << 4) + ADSR_Sustain_3)) {
               ADSR_volume_3 = (( ADSR_Sustain_3 << 4) + ADSR_Sustain_3);
               LFSR15_comparator_value_3 = ADSR_LFSR15[ADSR_Release_3   ];
               ADSR_stage_3 = 3;
             }
             break;
           case 3:
-            if (ADSR_volume_3 > (( ADSR_Sustain_3 << 4) + ADSR_Sustain_3)) {
+            if (ADSR_volume_3 >  uint16_t(( ADSR_Sustain_3 << 4) + ADSR_Sustain_3)) {
               ADSR_stage_3 = 2;
               LFSR15_comparator_value_3 = ADSR_LFSR15[ADSR_Decay_3   ];
             }

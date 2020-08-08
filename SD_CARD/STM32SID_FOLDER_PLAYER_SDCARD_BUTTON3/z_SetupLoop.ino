@@ -11,6 +11,7 @@
 void setup() {
   // put your setup code here, to run once:
 
+  AllocateRAM();                     // in 02_ram.ino     // allocate available memory (max 65535), leave 2048 bytes for locals
   debugInit ();                      // in 90_debug.ino
 
   initSD ();                         // in 10_SD.ino

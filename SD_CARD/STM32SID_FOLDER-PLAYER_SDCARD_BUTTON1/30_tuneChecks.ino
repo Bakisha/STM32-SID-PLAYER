@@ -93,7 +93,7 @@ inline bool Compatibility_check() {
   if (SID_load_start == 0) {
     SID_load_start = PEEK (0x7c + 0x380) + (PEEK (0x7d + 0x380) * 256);
   }
-  if ( SID_load_start >= 0x07E8)  {
+  if ( SID_load_start >= 0x0400)  { // >= 0x07E8)  {
     LOAD_ADDRESS = SID_load_start;
   }
 

@@ -151,5 +151,5 @@ inline void FRAMEtest () {
   debugPrintTXT    ("Emulated frame speed:  ");  debugPrintNUMBER (uint32_t((100 * Emu_uS) / Real_uS ));  debugPrintTXTln  ("%");
   Emu_uS = 0;
   Real_uS = 0;
-  
+
 }

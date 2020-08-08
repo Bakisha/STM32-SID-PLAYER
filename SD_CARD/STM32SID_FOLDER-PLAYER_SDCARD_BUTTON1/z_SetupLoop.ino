@@ -12,6 +12,8 @@ void setup() {
 
   pinMode(LED_BUILTIN, OUTPUT);
   randomSeed(millis());
+  AllocateRAM();                     // in 02_ram.ino     // allocate available memory (max 65535), leave 2048 bytes for locals
+
   debugInit(); // in 90_debug.ino
 
   autoconfigFinished = false; // do the autoconfig only once
@@ -154,7 +156,7 @@ void loop() {
             play_next_tune = false;
           }
           else {
-            
+
             reset_SID();
             set_tune_speed ();
             infoSID();

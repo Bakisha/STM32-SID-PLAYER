@@ -311,7 +311,7 @@ bool SD_LOAD () {
                 for (uint32_t i = 0; i < SID_data_size - 0x7e; i++) { // data start at $7e offset
 
                   if ( LOW_RAM == true) { // LOW_RAM from Compatibility_check
-                    if (i < (RAM_SIZE - 0x0400) ) {
+                    if (i <  uint16_t(RAM_SIZE - 0x0400) ) {
                       POKE (0x400 + i,  sidfile.read()) ; // load sid data to 0x400
                     }
                   }
