@@ -22,3 +22,11 @@ PS: Special thanks:
         - cbm80amiga ,  Checkout his YT page for so much great stuff for Blue pill:
         
         https://www.youtube.com/user/cbm80amiga/
+
+
+PS2: Also thanks for people who got interested into this project:
+
+        - Edu Arana               https://www.youtube.com/watch?v=_bBsGYvaXog
+        - Matteo                  https://www.youtube.com/watch?v=mWr3eCfsWOw
+        - Noplan                  https://www.youtube.com/channel/UCru3FcoymFzAeXwfSxfGPoQ
+        
