@@ -14,7 +14,7 @@ My personal project that i was having fun for some time now. Mainly done for STM
 
 -Plays sid from internal flash memory. Sid file is converted to array. Converter used is bin2c that can be found at https://sourceforge.net/projects/bin2c/files/
 
--Converted files can be downloaded from https://www.mediafire.com/file/yv1asvars17zrc8/HVSC71.7Z/file
+-Converted files can be downloaded from https://www.mediafire.com/file/w0txoba0pbl5led/HVSC74.zip/file
 
 -It is configurable. On first tab in Arduino IDE is values that can be changed to match microcontroller used. Currently it's set for STM32F103C8.
 
