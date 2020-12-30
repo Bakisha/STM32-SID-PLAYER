@@ -52,68 +52,68 @@ void setup() {
   // detailed information: http://archive.6502.org/datasheets/mos_6581_sid.pdf
 
   // channel 1
-  OSC_1_HiLo            = 0;              // 0-65535      // 
-  PW_HiLo_voice_1       = 0;              // 0-4095       // 
-  noise_bit_voice_1     = 0;              // true/false   // 
-  pulse_bit_voice_1     = 0;              // true/false   // 
-  sawtooth_bit_voice_1  = 0;              // true/false   // 
-  triangle_bit_voice_1  = 0;              // true/false   // 
-  test_bit_voice_1      = 0;              // true/false   // 
-  ring_bit_voice_1      = 0;              // true/false   // 
-  SYNC_bit_voice_1      = 0;              // true/false   // 
-  Gate_bit_1            = 0;              // true/false   // 
-  ADSR_Attack_1         = 0;              // 0-15         // 
-  ADSR_Decay_1          = 0;              // 0-15         // 
-  ADSR_Sustain_1        = 0;              // 0-15         // 
-  ADSR_Release_1        = 0;              // 0-15         // 
+  OSC_1_HiLo            = 0;              // 0-65535      //
+  PW_HiLo_voice_1       = 0;              // 0-4095       //
+  noise_bit_voice_1     = 0;              // true/false   //
+  pulse_bit_voice_1     = 0;              // true/false   //
+  sawtooth_bit_voice_1  = 0;              // true/false   //
+  triangle_bit_voice_1  = 0;              // true/false   //
+  test_bit_voice_1      = 0;              // true/false   //
+  ring_bit_voice_1      = 0;              // true/false   //
+  SYNC_bit_voice_1      = 0;              // true/false   //
+  Gate_bit_1            = 0;              // true/false   //
+  ADSR_Attack_1         = 0;              // 0-15         //
+  ADSR_Decay_1          = 0;              // 0-15         //
+  ADSR_Sustain_1        = 0;              // 0-15         //
+  ADSR_Release_1        = 0;              // 0-15         //
 
   // channel 2
 
-  OSC_2_HiLo            = 0;              // 0-65535      // 
-  PW_HiLo_voice_2       = 0;              // 0-4095       // 
-  noise_bit_voice_2     = 0;              // true/false   // 
-  pulse_bit_voice_2     = 0;              // true/false   // 
-  sawtooth_bit_voice_2  = 0;              // true/false   // 
-  triangle_bit_voice_2  = 0;              // true/false   // 
-  test_bit_voice_2      = 0;              // true/false   // 
-  ring_bit_voice_2      = 0;              // true/false   // 
-  SYNC_bit_voice_2      = 0;              // true/false   // 
-  Gate_bit_2            = 0;              // true/false   // 
-  ADSR_Attack_2         = 0;              // 0-15         // 
-  ADSR_Decay_2          = 0;              // 0-15         // 
-  ADSR_Sustain_2        = 0;              // 0-15         // 
-  ADSR_Release_2        = 0;              // 0-15         // 
+  OSC_2_HiLo            = 0;              // 0-65535      //
+  PW_HiLo_voice_2       = 0;              // 0-4095       //
+  noise_bit_voice_2     = 0;              // true/false   //
+  pulse_bit_voice_2     = 0;              // true/false   //
+  sawtooth_bit_voice_2  = 0;              // true/false   //
+  triangle_bit_voice_2  = 0;              // true/false   //
+  test_bit_voice_2      = 0;              // true/false   //
+  ring_bit_voice_2      = 0;              // true/false   //
+  SYNC_bit_voice_2      = 0;              // true/false   //
+  Gate_bit_2            = 0;              // true/false   //
+  ADSR_Attack_2         = 0;              // 0-15         //
+  ADSR_Decay_2          = 0;              // 0-15         //
+  ADSR_Sustain_2        = 0;              // 0-15         //
+  ADSR_Release_2        = 0;              // 0-15         //
 
   // channel 3
-  OSC_3_HiLo            = 0;              // 0-65535      // 
-  PW_HiLo_voice_3       = 0;              // 0-4095       // 
-  noise_bit_voice_3     = 0;              // true/false   // 
-  pulse_bit_voice_3     = 0;              // true/false   // 
-  sawtooth_bit_voice_3  = 0;              // true/false   // 
-  triangle_bit_voice_3  = 0;              // true/false   // 
-  test_bit_voice_3      = 0;              // true/false   // 
-  ring_bit_voice_3      = 0;              // true/false   // 
-  SYNC_bit_voice_3      = 0;              // true/false   // 
-  Gate_bit_3            = 0;              // true/false   // 
-  ADSR_Attack_3         = 0;              // 0-15         // 
-  ADSR_Decay_3          = 0;              // 0-15         // 
-  ADSR_Sustain_3        = 0;              // 0-15         // 
-  ADSR_Release_3        = 0;              // 0-15         // 
+  OSC_3_HiLo            = 0;              // 0-65535      //
+  PW_HiLo_voice_3       = 0;              // 0-4095       //
+  noise_bit_voice_3     = 0;              // true/false   //
+  pulse_bit_voice_3     = 0;              // true/false   //
+  sawtooth_bit_voice_3  = 0;              // true/false   //
+  triangle_bit_voice_3  = 0;              // true/false   //
+  test_bit_voice_3      = 0;              // true/false   //
+  ring_bit_voice_3      = 0;              // true/false   //
+  SYNC_bit_voice_3      = 0;              // true/false   //
+  Gate_bit_3            = 0;              // true/false   //
+  ADSR_Attack_3         = 0;              // 0-15         //
+  ADSR_Decay_3          = 0;              // 0-15         //
+  ADSR_Sustain_3        = 0;              // 0-15         //
+  ADSR_Release_3        = 0;              // 0-15         //
 
   // other registers
-  FILTER_HiLo           = 0;              // 0-2047       // 
-  FILTER_Resonance      = 0;              // 0-15         // 
-  FILTER_Enable_1       = 0;              // true/false   // 
-  FILTER_Enable_2       = 0;              // true/false   // 
-  FILTER_Enable_3       = 0;              // true/false   // 
-  OFF3                  = 0;              // true/false   // 
-  FILTER_HP             = 0;              // true/false   // 
-  FILTER_BP             = 0;              // true/false   // 
-  FILTER_LP             = 0;              // true/false   // 
-  MASTER_VOLUME         = 0;              // 0-15         // 
+  FILTER_HiLo           = 0;              // 0-2047       //
+  FILTER_Resonance      = 0;              // 0-15         //
+  FILTER_Enable_1       = 0;              // true/false   //
+  FILTER_Enable_2       = 0;              // true/false   //
+  FILTER_Enable_3       = 0;              // true/false   //
+  OFF3                  = 0;              // true/false   //
+  FILTER_HP             = 0;              // true/false   //
+  FILTER_BP             = 0;              // true/false   //
+  FILTER_LP             = 0;              // true/false   //
+  MASTER_VOLUME         = 0;              // 0-15         //
 
   InitHardware(); // 2_setup.ino  (start SID emulator)
-  
+
   reset_SID(); // in 6_barebone_sounds.ino
 }
 
