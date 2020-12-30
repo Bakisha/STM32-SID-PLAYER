@@ -517,7 +517,7 @@ const uint32_t  ADSR_LFSR15 [] = {
 
 //ADSR 1
 
-uint32_t ADSR_volume_1 = 0; // 8bit ADSR volume, but must use uint32_t because it will  // 256 different values of volume
+uint16_t ADSR_volume_1 = 0; // 8bit ADSR volume, but must use uint32_t because it will  // 256 different values of volume
 uint32_t LFSR15_1 = 0x7fff; // 15bit ADSR LSFR //
 uint32_t LFSR15_comparator_value_1 = 0; // 15bit comparator for LFSR15
 uint16_t Divided_LFSR15_1 = 0; // whole number helper variable
@@ -1745,9 +1745,9 @@ inline void write6502(uint16_t address, uint8_t value6502) {
   }
   if ( address == 0xdc05 )  {
     CIA_DC05 = value6502;
-  }
-  if (CIA_DC05 > 0) { // set song speed only when Hi value of CIA timer is greater then 0
-    set_tune_speed ();
+    if (CIA_DC05 > 0) { // set song speed only when Hi value of CIA timer is greater then 0, and only on write to $DC05)
+      set_tune_speed ();
+    }
   }
 
 }
