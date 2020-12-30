@@ -358,7 +358,7 @@ const uint32_t  ADSR_LFSR15 [] = {
 
 //ADSR 1
 
-uint32_t ADSR_volume_1 = 0; // 8bit ADSR volume, but must use uint32_t because it will  // 256 different values of volume
+uint16_t ADSR_volume_1 = 0; // 8bit ADSR volume, but must use uint32_t because it will  // 256 different values of volume
 uint32_t LFSR15_1 = 0x7fff; // 15bit ADSR LSFR //
 uint32_t LFSR15_comparator_value_1 = 0; // 15bit comparator for LFSR15
 uint16_t Divided_LFSR15_1 = 0; // whole number helper variable
