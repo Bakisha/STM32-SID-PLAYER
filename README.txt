@@ -26,8 +26,8 @@ PS: Special thanks:
 
 PS2: Also thanks for people who got interested into this project:
 
-        - Edu Arana               https://www.youtube.com/watch?v=_bBsGYvaXog               - STM32F401CE PCB board
-        - Matteo                  https://www.youtube.com/watch?v=mWr3eCfsWOw               - STM32F103C8 + I2C LCD screen on DIY board
-        - Noplan                  https://www.youtube.com/channel/UCru3FcoymFzAeXwfSxfGPoQ  - STM32F103C8
-        - Xad Nightfall           https://www.youtube.com/watch?v=O6zrsIFlbew               - STM32F407VE dev board + LCD
+        - Edu Arana      https://www.youtube.com/watch?v=_bBsGYvaXog               - STM32F401CE PCB board
+        - Matteo         https://www.youtube.com/watch?v=mWr3eCfsWOw               - STM32F103C8 + I2C LCD screen on DIY board
+        - Noplan         https://www.youtube.com/channel/UCru3FcoymFzAeXwfSxfGPoQ  - STM32F103C8
+        - Xad Nightfall  https://www.youtube.com/watch?v=O6zrsIFlbew               - STM32F407VE dev board + LCD
         
