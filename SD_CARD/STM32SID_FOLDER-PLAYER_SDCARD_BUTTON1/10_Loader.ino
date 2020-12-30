@@ -1,5 +1,6 @@
 #include <SPI.h>
 #include <SdFat.h>  // install from board manager or from:  https://github.com/greiman/SdFat
+                    // ---> IMPORTANT! <--- Please use 1.1.4 version of library. I have no plans to edit stuff because of broken compatibility after version 2.0.0
 
 #define SD_CLK          PA5
 #define SD_MISO         PA6
