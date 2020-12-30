@@ -298,10 +298,11 @@ inline void write6502(uint16_t address, uint8_t value) {
   }
   if ( address == 0xdc05 )  {
     CIA_DC05 = value;
+    if (CIA_DC05 > 0) { // set song speed only when Hi value of CIA timer is greater then 0, and only on write to $DC05)
+      set_tune_speed ();
+    }
   }
-  if (CIA_DC05 > 0) { // set song speed only when Hi value of CIA timer is greater then 0
-    set_tune_speed ();
-  }
+
 
 }
 
