@@ -96,7 +96,7 @@
 #define USE_STM32duino_CORE
 //                                        Official ST cores. Support for multiple line of MPU
 //                                        link: https://github.com/stm32duino/Arduino_Core_STM32
-//                                        Set in preferences: https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json and search stm32 in board manager.
+//                                        Set in preferences: https://github.com/stm32duino/BoardManagerFiles/raw/master/package_stmicroelectronics_index.json and search stm32 in board manager.
 //                                        Choose stm32 cores by ST Microelectronics. Select your CPU from tools menu
 
 
