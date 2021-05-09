@@ -17,12 +17,60 @@ void setup() {
   initSD ();                         // in 10_SD.ino
   testROOT ();                       // in 10_SD.ino
 
-  LoadFirstSID ();                   // in 10_SD.ino
+#ifdef BUTTON_NEXT                                // delete settings file if NEXT button is pressed on power up
+  pinMode(BUTTON_NEXT, INPUT_PULLUP);             // this will be set in 20_hardware.ino anyway
+  if (digitalRead(BUTTON_NEXT) == LOW) {
+    DeleteSettings();                             // in 10_SD.ino
+  }
+#endif
 
-  CPU_test();                        // benchmark 6502 emulator timing
-  autoconfigMultiplier();            // benchmark SID emulator timing, set multiplier
+  tune_mode       = 0;                          // tune mode   : 0-> next ; 1-> previous
+  file_mode       = 0;                          // file mode   : 0-> next ; 1-> previous
+  folder_mode     = 0;                          // folder mode : 0-> next ; 1-> previous
+  change_tune     = false;                      //
+  change_file     = false;                      // file/folder number loaded from SdCard
+  change_folder   = false;                      //
+  count_sids      = false;                      //
+  load_sid        = false;                      // load current_file/current_folder tune
+  mode_play_ON    = true;                       // enable it in case it was off (for pause ON/OFF)
+  player          = false;                      // true: play sids, check buttons  , false: check change_tune/file/folder/load_sid
+
+
+  // read period/multiplier/current_file/current_folder from SdCard
+  if (ReadSettings()) {                           // in 10_SD.ino
+    debugPrintTXTln("reading settings OK ");
+
+    if (SD_LOAD()) {                                    // load sid file
+      // everything else was set in SD_LOAD
+      player = true;
+      infoSID(); // print out info on any output that is defined
+      instructions = 0; // reset JAM counter when finished loading
+      tune_play_counter = 0; // reset tune counter
+      mode_play_ON    = true;                       // enable it in case it was off
+    }
+    else { // fail to load file from settings, load first sid, do the autonconfig, autonconfig multiplier
+   
+      debugPrintTXTln("reading settings failed ");
+      LoadFirstSID ();                   // in 10_SD.ino
+      CPU_test();                        // benchmark 6502 emulator timing
+      autoconfigMultiplier();            // benchmark SID emulator timing, set multiplier
+    }
+  }
+  else                                            // no settings file loaded, do the autoconfig
+  { //                                               NOTE: first creation of a settings file might take some time, around 15 seconds
+    debugPrintTXTln("reading settings failed ");
+
+    LoadFirstSID ();                   // in 10_SD.ino
+    CPU_test();                        // benchmark 6502 emulator timing
+    autoconfigMultiplier();            // benchmark SID emulator timing, set multiplier
+
+    WriteSettings (period, multiplier , current_file, current_folder, total_sid_files);     // in 10_SD.ino
+  }
+
+  debugPrintTXT(" period: ");  debugPrintNUMBER(period);  debugPrintTXT(" multiplier: ");  debugPrintNUMBER(multiplier);  debugPrintTXT(" current_file: ");  debugPrintNUMBER(current_file);  debugPrintTXT(" current_folder: ");  debugPrintNUMBER(current_folder);  debugPrintTXT(" total_sid_files: ");  debugPrintNUMBER(total_sid_files);  debugPrintTXTln(" ");
+
   InitHardware();                    // Setup hardware timers and interrupts
-  FRAMEtest();                       // test 1 frame (disable this if you are annoyed by short sound at the power up) / Also, disable it if your first loaded sid is jamming the emulator (it never return from SID_init subroutine)
+  //FRAMEtest();                       // test 1 frame (disable this if you are annoyed by short sound at the power up) / Also, disable it if your first loaded sid is jamming the emulator (it never return from SID_init subroutine)
   reset_SID();
   reset6502();
   HELP();
@@ -262,17 +310,20 @@ void loop() {
 
     ///////////////////////////////////////////////////////////////////////////////////////////
     if (load_sid == true) {
-      //   debugPrintTXTln ("LOADING...");
+      debugPrintTXTln ("LOADING...");
 
       load_sid = false;
       if ((total_sid_files) > 0) {
 
         if (SD_LOAD()) {
           // everything else was set in SD_LOAD
+          CIA_DC05 = 0;
+          CIA_DC04 = 0;
           player = true;
           infoSID(); // print out info on any output that is defined
           instructions = 0; // reset JAM counter when finished loading
           tune_play_counter = 0; // reset tune counter
+          WriteSettings (period, multiplier , current_file, current_folder, total_sid_files);     // in 10_SD.ino
         }
         else { // idiot-proof else. Just load next file, if any
           change_file = true;

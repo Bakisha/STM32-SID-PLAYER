@@ -35,6 +35,107 @@ SdFat sd;
 SdFile folder;
 SdFile sidfile;
 
+uint8_t SDdata[10] ;
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+// delete settings file from SdCard
+void DeleteSettings() {
+  if (!sd.remove("STM32SID_Player_settings.bin") ) {
+    debugPrintTXTln("settings remove failed");
+  }
+  else {
+    debugPrintTXTln("settings file removed");
+  }
+}
+//////////////////////////////////////////////////////////////////////////////////////////
+
+// read settings file from SdCard ( period, multiplier, current_file, current_folder, total_sid_files in 16bit little endian format )
+bool ReadSettings () {
+  bool return_b = false;
+  if (sd.exists("STM32SID_Player_settings.bin")) {
+
+    debugPrintTXTln("settings file found");
+    if (sidfile.open("STM32SID_Player_settings.bin", O_READ )) {
+
+      debugPrintTXTln("settings file opened for reading");
+
+      sidfile.seekSet( 0 );
+
+      SDdata[0] = uint8_t (sidfile.read());
+      SDdata[1] = uint8_t (sidfile.read());
+      SDdata[2] = uint8_t (sidfile.read());
+      SDdata[3] = uint8_t (sidfile.read());
+      SDdata[4] = uint8_t (sidfile.read());
+      SDdata[5] = uint8_t (sidfile.read());
+      SDdata[6] = uint8_t (sidfile.read());
+      SDdata[7] = uint8_t (sidfile.read());
+      SDdata[8] = uint8_t (sidfile.read());
+      SDdata[9] = uint8_t (sidfile.read());
+
+      period          = uint32_t ( uint32_t(SDdata[0]) | uint32_t(SDdata[1] << 8));
+      multiplier      = uint32_t ( uint32_t(SDdata[2]) | uint32_t(SDdata[3] << 8));
+      current_file    = uint32_t ( uint32_t(SDdata[4]) | uint32_t(SDdata[5] << 8));
+      current_folder  = uint32_t ( uint32_t(SDdata[6]) | uint32_t(SDdata[7] << 8));
+      total_sid_files = uint32_t ( uint32_t(SDdata[8]) | uint32_t(SDdata[9] << 8));
+
+      debugPrintTXTln("settings loaded");
+
+      sidfile.close();
+
+      return_b = true;
+
+    }
+
+  }
+
+  return return_b;
+}
+//////////////////////////////////////////////////////////////////////////////////////////
+
+// write settings file to root of SdCard ( period, multiplier, current_file, current_folder in 16bit little endian format )
+
+
+void WriteSettings (uint32_t p, uint32_t m , uint32_t fl, uint32_t fd, uint32_t ts) {
+  if (!sd.exists("STM32SID_Player_settings.bin")) {
+    debugPrintTXTln("reading settings failed "); ("file don't exists");
+    if (sidfile.open("STM32SID_Player_settings.bin", O_RDWR | O_CREAT)) { //  If O_CREAT and O_EXCL are set, open() shall fail if the file exists.
+
+
+      debugPrintTXTln("file creating , please wait");
+      sidfile.close();
+      debugPrintTXTln("file created ");
+    }
+  }
+  if (sidfile.open("STM32SID_Player_settings.bin", O_RDWR)) { //  If O_CREAT and O_EXCL are set, open() shall fail if the file exists.
+    //debugPrintTXTln("file is created and opened for writing");
+    SDdata[0] = uint8_t (p & 0xff);
+    SDdata[1] = uint8_t ((p & 0xff00) >> 8);
+    SDdata[2] = uint8_t (m & 0xff);
+    SDdata[3] = uint8_t ((m & 0xff00) >> 8);
+    SDdata[4] = uint8_t (fl & 0xff);
+    SDdata[5] = uint8_t ((fl & 0xff00) >> 8);
+    SDdata[6] = uint8_t (fd & 0xff);
+    SDdata[7] = uint8_t ((fd & 0xff00) >> 8);
+    SDdata[8] = uint8_t (ts & 0xff);
+    SDdata[9] = uint8_t ((ts & 0xff00) >> 8);
+    sidfile.seekSet( 0 );
+    sidfile.write(uint8_t(SDdata[0]));
+    sidfile.write(uint8_t(SDdata[1]));
+    sidfile.write(uint8_t(SDdata[2]));
+    sidfile.write(uint8_t(SDdata[3]));
+    sidfile.write(uint8_t(SDdata[4]));
+    sidfile.write(uint8_t(SDdata[5]));
+    sidfile.write(uint8_t(SDdata[6]));
+    sidfile.write(uint8_t(SDdata[7]));
+    sidfile.write(uint8_t(SDdata[8]));
+    sidfile.write(uint8_t(SDdata[9]));
+    //debugPrintTXTln("settings saved");
+    sidfile.close();
+  }
+}
+
+
 //////////////////////////////////////////////////////////////////////////////////////////
 
 void initSD() {
@@ -238,7 +339,7 @@ uint16_t SD_Count_Total_SIDs() { // set total_sid_files
 
 bool SD_LOAD () {
 
-  debugPrintTXTln("LOADING");
+  //debugPrintTXTln("LOADING");
 
   int16_t number_of_sid_files = 0;
 

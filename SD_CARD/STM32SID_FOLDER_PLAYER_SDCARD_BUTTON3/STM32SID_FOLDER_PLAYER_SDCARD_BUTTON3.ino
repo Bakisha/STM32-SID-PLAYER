@@ -14,15 +14,18 @@
 
 #define TUNE_PLAY_TIME 215                               // Can't implement songlenghts, manual values are needed (in seconds)//  TODO: try to determine silence in output, and skip to next tune
 
-const char * const HVSC = "HVSC" ;                       // ---> IMPORTANT! <---  name of HVSC SID Collection folder on your SD Card ("HVSC", "C64Music", "/" or "" for root, etc"
+const char * const HVSC = "C64Music" ;                       // ---> IMPORTANT! <---  name of HVSC SID Collection folder on your SD Card ("HVSC", "C64Music", "/" or "" for root, etc"
 
 //#include "01_HVSC.h"                                   // uncomment this line to load whole HVSC folder list from "01_HVSC.h". If disabled, it will load folder list below (disabled for BluePill, can be enabled, but must compile with O0 optimatization)
 
 #ifndef NUMBER_OF_FOLDERS
-#define NUMBER_OF_FOLDERS 35                             // set number of folder for playlist. Must have at least 1.
+#define NUMBER_OF_FOLDERS 38                             // set number of folder for playlist. Must have at least 1.
 const char * const FOLDER_PLAYLIST                       //  set favorite directories paths (relative to main HVSC folder) with sid files in it
 [NUMBER_OF_FOLDERS ] =
 {
+  "/",
+  "CUSTOM/",
+  "FAVORITES/",  
   "MUSICIANS/G/Gregfeel/",
   "MUSICIANS/B/Bayliss_Richard/",  
   "MUSICIANS/G/Gas_On/",
@@ -72,12 +75,12 @@ const char * const FOLDER_PLAYLIST                       //  set favorite direct
 #define AUDIO_OUT       PA8                 // can't be changed, this is just reminder 
 
 #define USE_SERIAL                          // for debugging info on Serial (usually USB Serial), uncomment if it's needed
-#define USE_SERIAL1                         // for debugging info on Serial1 (usually on PA9/PA10), uncomment if it's needed
-#define SERIAL_SPEED 9600                   // Speed of serial connection
+#define USE_SERIAL1                       // for debugging info on Serial1 (usually on PA9/PA10), uncomment if it's needed
+#define SERIAL_SPEED    9600                // Speed of serial connection
 
 #define CS_SDCARD       PA1                 // can be changed
 #define SD_SPEED        20                  // Maximum SD Card SPI speed in MHz 
-///                                            ! Speed matters ! Loading between folders is around 1second per 50 files in a folder on 20MHz, and around 3 seconds per 50 files in a folder for 1 MHz
+///                                         ! Speed matters ! Loading between folders is around 1second per 50 files in a folder on 20MHz, and around 3 seconds per 50 files in a folder for 1 MHz
 
 //#define SD_CLK          PA5               // it must be hardware SPI1 port pins (look at your microcontroller pinout)
 //#define SD_MISO         PA6
@@ -156,8 +159,9 @@ const char * const FOLDER_PLAYLIST                       //  set favorite direct
 #endif
 
 #include <SPI.h>
+#include "SDCONFIG.h"                                    // local settings for SdFat library (same as file "SdFatConfig.h" copied from SdFat library folder)
 #include <SdFat.h>                                       // install from library manager or from:  https://github.com/greiman/SdFat
-                                                         // ---> IMPORTANT! <--- Please use 1.1.4 version of library. I have no plans to edit stuff because of broken compatibility after version 2.0.0
+                                                         // ---> IMPORTANT! <--- Try 1.1.4 version of library if you are having trouble compiling.
 
 
 #include "xx_RAM.h"
