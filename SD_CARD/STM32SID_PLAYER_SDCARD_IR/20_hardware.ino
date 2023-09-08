@@ -2,19 +2,20 @@
 // Hardware specifics, for easier porting to other microcontrollers
 
 #ifdef USE_STM32duino_CORE
+#ifndef USE_DAC 
 HardwareTimer *PWM = new HardwareTimer(TIM1); // need to set it up here, before setup{}
+#endif 
 #endif
-
 //
-// Set PA8 pin as PWM, at <period*F_CPU> overflow
-// Set interrupt at <multiplier>
+// Set AUDIO_OUT pin PA8 as PWM at <period*F_CPU> overflow, or PA4 as DAC 12bit output 
+// Set interrupt at <multiplier> ?S
 
 
 inline void InitHardware() { // setup pins and IRQ
 
   // init irq
 
-  noInterrupts();
+
 
 
 #ifdef LED_BUILTIN
@@ -51,23 +52,28 @@ pinMode (irPIN,INPUT_PULLUP);
 #endif
 
 #ifdef USE_STM32duino_CORE
-  pinMode(PA8, OUTPUT);
+ pinMode(AUDIO_OUT, OUTPUT);
 
+#ifdef USE_DAC   // Use DAC on pin PA4
+
+analogWrite(AUDIO_OUT, 0x000);    // Set PA4 as analog output, write once, so next write can be done directly to register
+
+#else     // use PWM
   PWM->pause();
-  PWM->setMode(1, TIMER_OUTPUT_COMPARE_PWM1, PA8);
+  PWM->setMode(1, TIMER_OUTPUT_COMPARE_PWM1, PA8);        // set PA8 as pwm output of Timer1, channel 1
   PWM->setPrescaleFactor(1);
-  PWM->setOverflow( period * magic_number, TICK_FORMAT);
+  PWM->setOverflow( period * magic_number, TICK_FORMAT);  // CPU_MHz*period
   PWM->resume();
-
+#endif
 
   HardwareTimer *IRQtimer = new HardwareTimer(TIM2);
-  IRQtimer->setMode(2, TIMER_OUTPUT_COMPARE);
-  IRQtimer->setOverflow(multiplier, MICROSEC_FORMAT);
+  
+  IRQtimer->setOverflow(multiplier, MICROSEC_FORMAT);     // set callback at samplerate
   IRQtimer->attachInterrupt(irq_handler);
   IRQtimer->resume();
 #endif
 
-  interrupts();
+  
 
 }
 
@@ -78,7 +84,11 @@ inline void SetAUDIO () {
 #endif
 
 #ifdef USE_STM32duino_CORE
-  TIM1->CCR1 =  main_volume; //  faster version of PWM->setCaptureCompare(1, main_volume, TICK_COMPARE_FORMAT);
-#endif
+ #ifdef USE_DAC
+ DAC1->DHR12R1 = main_volume; //  faster version of analogWrite(AUDIO_OUT, main_volume)
+ #else // PWM
+ TIM1->CCR1 =  main_volume; //  faster version of PWM->setCaptureCompare(1, main_volume, TICK_COMPARE_FORMAT);
+#endif // PWM
+#endif // CORE
 
 }

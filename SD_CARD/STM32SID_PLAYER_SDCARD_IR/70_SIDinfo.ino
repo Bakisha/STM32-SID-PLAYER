@@ -115,6 +115,7 @@ void  infoSID() {
   debugPrintTXT   ("Video:     "); debugPrintTXT   (SIDinfo_VIDEO); debugPrintTXTln ("");
   debugPrintTXT   ("Clock:     "); debugPrintTXT   (SIDinfo_CLOCK); debugPrintTXT   (" ("); debugPrintNUMBER(SID_speed); debugPrintTXT   (")") ; debugPrintTXTln ("");
   debugPrintTXT   ("SID model: "); debugPrintTXT   (SIDinfo_MODEL); debugPrintTXTln ("");
+  debugPrintTXT   ("Free memory: "); debugPrintNUMBER   ( FreeBytes()); debugPrintTXTln ("");
   debugPrintTXTln ("--------------------------------------------------------------------");
 
 
@@ -135,6 +136,7 @@ void HELP () {
   debugPrintTXT    ("Hz Sample ");
   debugPrintNUMBER (uint32_t( (1000000 / period) / 1000));
   debugPrintTXTln  ("KHz PWM frequency");
+  debugPrintTXT    (__DATE__); debugPrintTXT    (" "); debugPrintTXTln  (__TIME__);
   debugPrintTXTln  ("");
 
   debugPrintTXTln  (" ");

@@ -118,38 +118,3 @@ inline void autoconfigMultiplier () {
   }
 
 }
-
-inline void FRAMEtest () {
-  // calculate time of one emulated frame (SID emulation is ON)
-  reset6502();
-
-  while (JSR1003 == 0) { // skip first JSR$1003
-    exec6502();
-  }
-
-  Emu_uS = 0;
-  Real_uS = 0;
-  instructions = 0;
-  Real_uS_start = micros();
-
-  JSR1003 = 0;
-  while (JSR1003 == 0) { // now do 1 frame to measure timing
-
-    exec6502(); // execute 1 instruction
-    Emu_uS = Emu_uS + (ticktable[opcode]);
-
-  }
-
-  Real_uS_end = micros();
-  Real_uS = Real_uS_end - Real_uS_start;
-
-  debugPrintTXTln  ("");
-  debugPrintTXTln  ("Frame Test");
-  debugPrintTXT    ("Instructions executed: ");  debugPrintNUMBER (instructions);  debugPrintTXTln  ("");
-  debugPrintTXT    ("Frame time (real):     ");  debugPrintNUMBER (uint32_t(Real_uS));  debugPrintTXTln  ("uS ");
-  debugPrintTXT    ("Frame time (emulated): ");  debugPrintNUMBER (uint32_t(Emu_uS));  debugPrintTXTln  ("uS ");
-  debugPrintTXT    ("Emulated frame speed:  ");  debugPrintNUMBER (uint32_t((100 * Emu_uS) / Real_uS ));  debugPrintTXTln  ("%");
-  Emu_uS = 0;
-  Real_uS = 0;
-
-}

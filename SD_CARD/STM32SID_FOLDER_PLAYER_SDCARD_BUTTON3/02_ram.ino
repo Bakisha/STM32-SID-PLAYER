@@ -14,7 +14,7 @@ void AllocateRAM() {
   else {
     RAM_SIZE = FreeBytes() - 2048;
   }
-  RAM = (uint8_t*) calloc(RAM_SIZE, sizeof(uint8_t)); // allocate memory
+  RAM = (uint8_t*) calloc(RAM_SIZE+1, sizeof(uint8_t)); // allocate memory
 }
 
 inline void POKE (uint16_t addr , uint8_t bytE ) {

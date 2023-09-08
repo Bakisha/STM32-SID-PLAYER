@@ -17,7 +17,7 @@ inline void set_tune_speed () { // set tune speed best on IRQ_TYPE_PER_TUNE and 
 
   switch ((VIDEO_TYPE << 1) | SUBTUNE_SPEED)  {
     case 0: // 000 // VBI - UNKNOWN
-      SID_speed = 20000; // assume it's pal
+      SID_speed = 19968; // assume it's pal
       break;
 
     case 1: // 001 // CIA - UNKNOWN
@@ -31,7 +31,7 @@ inline void set_tune_speed () { // set tune speed best on IRQ_TYPE_PER_TUNE and 
       break;
 
     case 2: // 010 // VBI - PAL
-      SID_speed = 20000;
+      SID_speed = 19968;
       break;
 
     case 3: // 011 // CIA - PAL
@@ -59,7 +59,7 @@ inline void set_tune_speed () { // set tune speed best on IRQ_TYPE_PER_TUNE and 
       break;
 
     case 6: // 110 // VBI - PAL and NTSC
-      SID_speed = 20000; // assume it's pal vbi
+      SID_speed = 19968; // assume it's pal vbi
       break;
 
     case 7: // 111 // CIA - PAL and NTSC

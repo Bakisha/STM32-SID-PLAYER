@@ -781,6 +781,12 @@ inline void SID_emulator() {
   if (Volume < 0) Volume = 0;
   if (Volume > 0xfffff) Volume = 0xfffff;
 
+#ifdef USE_DAC
+  main_volume_32bit = uint32_t(Volume ) ; // 20bit
+  main_volume_32bit = (main_volume_32bit *  MASTER_VOLUME); //24bit
+  main_volume_32bit = (main_volume_32bit) >> 12; // 12bit
+  main_volume = main_volume_32bit;
+#else  // PWM
   // main_volume_32bit = ( magic_number * period * ((Volume)&0xfffff) * MASTER_VOLUME) >> 24;
   main_volume_32bit = (Volume ) ;
   main_volume_32bit = (main_volume_32bit * magic_number);
@@ -788,7 +794,8 @@ inline void SID_emulator() {
   main_volume_32bit = (main_volume_32bit *  MASTER_VOLUME);
   main_volume_32bit = (main_volume_32bit * period) ;
   main_volume_32bit = (main_volume_32bit ) >> 12;
-  main_volume = main_volume_32bit + 1;
+  main_volume = main_volume_32bit;
+#endif  // DAC/PWM
 
   OSC3 =  (OSC_3 >> 16) & 0xff; //
   /*

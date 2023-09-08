@@ -63,10 +63,12 @@ void setup() {
     WriteSettings (period, multiplier , current_file, current_folder, total_sid_files);     // in 10_SD.ino
   }
 
+  // multiplier = 24; // override autoconfig (samplerate = 1.000.000,00 / multiplier )
+  // period = 4; // pwm width in ?S, override autonconfig
   debugPrintTXT(" period: ");  debugPrintNUMBER(period);  debugPrintTXT(" multiplier: ");  debugPrintNUMBER(multiplier);  debugPrintTXT(" current_file: ");  debugPrintNUMBER(current_file);  debugPrintTXT(" current_folder: ");  debugPrintNUMBER(current_folder);  debugPrintTXT(" total_sid_files: ");  debugPrintNUMBER(total_sid_files);  debugPrintTXTln(" ");
 
   InitHardware();                    // Setup hardware timers and interrupts
-  //FRAMEtest();                       // test 1 frame (disable this if you are annoyed by short sound at the power up) / Also, disable it if your first loaded sid is jamming the emulator (it never return from SID_init subroutine)
+ 
   reset_SID();
   reset6502();
   HELP();
@@ -266,7 +268,7 @@ void loop() {
           if (current_file < 1) { // play again 1st file
             current_file = 1; // 1 indexed
             load_sid = true; // stay on first file
-            // change_folder = true;
+
           }
           else { // play previous file
             load_sid = true;

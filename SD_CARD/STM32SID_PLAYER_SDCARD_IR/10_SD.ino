@@ -4,6 +4,7 @@ char SID_DIR_name [128] ; // reserve 128 bytes for directory path name
 char SID_path_filename [256] ; // reserve 256 bytes for full path of file
 bool IS_SID_FILE = false; //  for extension check
 
+char settings_filename[] = "STM32 SID PLAYER Settings " __TIME__ " " __DATE__ ".bin";  // settings filename is named per compilation date
 int16_t current_folder = 0; // current playing folder from folderlist (0 indexed)
 int16_t current_file = 0; // number of currently playing sid file in folder. Valid only when playable sid is found (1 indexed)
 
@@ -41,7 +42,7 @@ uint8_t SDdata[10] ;
 
 // delete settings file from SdCard
 void DeleteSettings() {
-  if (!sd.remove("STM32SID_Player_settings.bin") ) {
+  if (!sd.remove(settings_filename) ) {
     debugPrintTXTln("settings remove failed");
   }
   else {
@@ -53,10 +54,10 @@ void DeleteSettings() {
 // read settings file from SdCard ( period, multiplier, current_file, current_folder, total_sid_files in 16bit little endian format )
 bool ReadSettings () {
   bool return_b = false;
-  if (sd.exists("STM32SID_Player_settings.bin")) {
+  if (sd.exists(settings_filename)) {
 
     debugPrintTXTln("settings file found");
-    if (sidfile.open("STM32SID_Player_settings.bin", O_READ )) {
+    if (sidfile.open(settings_filename, O_READ )) {
 
       debugPrintTXTln("settings file opened for reading");
 
@@ -97,9 +98,10 @@ bool ReadSettings () {
 
 
 void WriteSettings (uint32_t p, uint32_t m , uint32_t fl, uint32_t fd, uint32_t ts) {
-  if (!sd.exists("STM32SID_Player_settings.bin")) {
-    debugPrintTXTln("reading settings failed "); ("file don't exists");
-    if (sidfile.open("STM32SID_Player_settings.bin", O_RDWR | O_CREAT)) { //  If O_CREAT and O_EXCL are set, open() shall fail if the file exists.
+  if (!sd.exists(settings_filename)) {
+    debugPrintTXTln("reading settings failed, file don't exists");
+ 
+   if (sidfile.open(settings_filename, O_RDWR | O_CREAT)) { //  If O_CREAT and O_EXCL are set, open() shall fail if the file exists.
 
 
       debugPrintTXTln("file creating , please wait");
@@ -107,7 +109,7 @@ void WriteSettings (uint32_t p, uint32_t m , uint32_t fl, uint32_t fd, uint32_t 
       debugPrintTXTln("file created ");
     }
   }
-  if (sidfile.open("STM32SID_Player_settings.bin", O_RDWR)) { //  If O_CREAT and O_EXCL are set, open() shall fail if the file exists.
+  if (sidfile.open(settings_filename, O_RDWR)) { //  If O_CREAT and O_EXCL are set, open() shall fail if the file exists.
     //debugPrintTXTln("file is created and opened for writing");
     SDdata[0] = uint8_t (p & 0xff);
     SDdata[1] = uint8_t ((p & 0xff00) >> 8);
@@ -140,6 +142,8 @@ void WriteSettings (uint32_t p, uint32_t m , uint32_t fl, uint32_t fd, uint32_t 
 
 void initSD() {
 
+  settings_filename[28] = 0x2d ; // dirty hack to replace : with -
+  settings_filename[31] = 0x2d ;
   while (!sd.begin(CS_SDCARD, SD_SCK_MHZ(SD_SPEED))) { // 1Mhz - safest sd card speed
     debugPrintTXTln("ERROR1 - can't open sd card");
 

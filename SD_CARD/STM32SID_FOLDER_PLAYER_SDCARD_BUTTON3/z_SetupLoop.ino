@@ -24,6 +24,13 @@ void setup() {
   }
 #endif
 
+// DeleteSettings(); // testing or lock-up
+
+
+
+
+
+
   tune_mode       = 0;                          // tune mode   : 0-> next ; 1-> previous
   file_mode       = 0;                          // file mode   : 0-> next ; 1-> previous
   folder_mode     = 0;                          // folder mode : 0-> next ; 1-> previous
@@ -67,10 +74,12 @@ void setup() {
     WriteSettings (period, multiplier , current_file, current_folder, total_sid_files);     // in 10_SD.ino
   }
 
+  // multiplier = 24; // override autoconfig (samplerate = 1.000.000,00 / multiplier )
+  // period = 4; // pwm width in ?S, override autonconfig
   debugPrintTXT(" period: ");  debugPrintNUMBER(period);  debugPrintTXT(" multiplier: ");  debugPrintNUMBER(multiplier);  debugPrintTXT(" current_file: ");  debugPrintNUMBER(current_file);  debugPrintTXT(" current_folder: ");  debugPrintNUMBER(current_folder);  debugPrintTXT(" total_sid_files: ");  debugPrintNUMBER(total_sid_files);  debugPrintTXTln(" ");
 
   InitHardware();                    // Setup hardware timers and interrupts
-  //FRAMEtest();                       // test 1 frame (disable this if you are annoyed by short sound at the power up) / Also, disable it if your first loaded sid is jamming the emulator (it never return from SID_init subroutine)
+ 
   reset_SID();
   reset6502();
   HELP();
@@ -124,7 +133,7 @@ void loop() {
       }
       else {
         MASTER_VOLUME = 0; // pssst
-        JSR1003 = true; // enabled because of buttons read
+        JSR1003 = 1; // enabled because of buttons read
       }
     }
     else {
@@ -268,8 +277,9 @@ void loop() {
         case 1: // previous
           file_mode = 0 ; // reset file mode
           current_file = current_file - 1; // 1 indexed
-          if (current_file < 1) { // first file played, load next file (first)
-            change_folder = true;
+          if (current_file < 1) { // play again 1st file
+            current_file = 1; // 1 indexed
+            load_sid = true; // stay on first file
           }
           else { // play previous file
             load_sid = true;
@@ -294,7 +304,7 @@ void loop() {
           change_file = true;  count_sids = true;
           break;
         case 1: // previous folder
-          if (current_folder == 0) {
+          if (current_folder == 0) { // play last folder if 0
             current_folder = (NUMBER_OF_FOLDERS - 1); // zero indexed
           }
           else {

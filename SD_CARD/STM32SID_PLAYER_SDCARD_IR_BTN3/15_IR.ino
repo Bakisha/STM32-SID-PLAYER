@@ -96,7 +96,7 @@ uint32_t irTimer_diff;
     gotIr =  a ircommand is waiting to be handled
     repeatIr = a ircommand AND a repeatsignal has been sent
 *****************************************/
-void irRead() {
+inline void irRead() {
 
   // call from interrupt routine every <multiplier> microseconds
 
@@ -172,7 +172,7 @@ void irRead() {
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-int32_t IRgetCode () {
+inline int32_t IRgetCode () {
 
   int32_t return_code = 0x00; // if gotIr or repeatIr is false, return 0
 
@@ -200,7 +200,7 @@ int32_t IRgetCode () {
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void checkIR () {
+inline void checkIR () {
 
 
   switch (IRgetCode()) { // get code from IR
