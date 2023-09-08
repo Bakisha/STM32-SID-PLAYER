@@ -9,20 +9,16 @@ void irq_handler(void) { //
 
 
 #ifdef USE_ROGER_CORE
-  // STM32duino boards
-  // Timer1.pause(); // need to pause timer to be able to set value inside irq. Not needed when using ( Timer1.setCompare(TIMER_CH1, main_volume); )
-  // TIMER1->CCR1 =  main_volume; //  faster version of Timer1.setCompare(TIMER_CH1, main_volume);
-  // Timer1.resume(); // 0.875uS
-  Timer1.setCompare(TIMER_CH1, main_volume); // 0.584 uS
+  Timer1.setCompare(TIMER_CH1, main_volume);
 #endif
-
 
 #ifdef USE_STM32duino_CORE
-  // STM32 boards
-  // analogWrite(PA8, main_volume);
-  //PWM->setCaptureCompare(1, main_volume, TICK_COMPARE_FORMAT);
-  TIM1->CCR1 =  main_volume; //  faster version of PWM->setCaptureCompare(1, main_volume, TICK_COMPARE_FORMAT);
-#endif
+ #ifdef USE_DAC
+ DAC1->DHR12R1 = main_volume; //  faster version of analogWrite(AUDIO_OUT, main_volume)
+ #else // PWM
+ TIM1->CCR1 =  main_volume; //  faster version of PWM->setCaptureCompare(1, main_volume, TICK_COMPARE_FORMAT);
+#endif // PWM
+#endif // CORE
 
 
 
@@ -1056,16 +1052,21 @@ inline void SID_emulator () {
   if (Volume < 0) Volume = 0;
   if (Volume > 0xfffff) Volume = 0xfffff; // remove clipping (resonance sensitivity), just in case..
 
-  // main_volume_32bit = ( magic_number * period * ((Volume)&0xfffff) * MASTER_VOLUME) >> 24; // This could be as large as unsigned 40bit number before shifting, break it down into smaller steps to keep it inside 32bit number bounderies
-  main_volume_32bit = (Volume ) ; //& 0xfffff ; // 20bit
-  main_volume_32bit = (main_volume_32bit * magic_number); // 28bit
-  main_volume_32bit = (main_volume_32bit) >> 12; // 28-12 = 16bit
-  main_volume_32bit = (main_volume_32bit *  MASTER_VOLUME); //16+4 =20bit
-  main_volume_32bit = (main_volume_32bit * period) ; // 20+8=28bit
-  main_volume_32bit = (main_volume_32bit ) >> 12; // 28-20 = 16bit
-  main_volume = main_volume_32bit + 1; // i forgot why i added this. Maybe for minimum value for CCR1?
-
-
+#ifdef USE_DAC
+  main_volume_32bit = uint32_t(Volume ) ; // 20bit
+  main_volume_32bit = (main_volume_32bit *  MASTER_VOLUME); //24bit
+  main_volume_32bit = (main_volume_32bit) >> 12; // 12bit
+  main_volume = main_volume_32bit;
+#else  // PWM
+  // main_volume_32bit = ( magic_number * period * ((Volume)&0xfffff) * MASTER_VOLUME) >> 24;
+  main_volume_32bit = (Volume ) ;
+  main_volume_32bit = (main_volume_32bit * magic_number);
+  main_volume_32bit = (main_volume_32bit) >> 12;
+  main_volume_32bit = (main_volume_32bit *  MASTER_VOLUME);
+  main_volume_32bit = (main_volume_32bit * period) ;
+  main_volume_32bit = (main_volume_32bit ) >> 12;
+  main_volume = main_volume_32bit;
+#endif  // DAC/PWM
 
   OSC3 =  (OSC_3 >> 16) & 0xff; //
   /*

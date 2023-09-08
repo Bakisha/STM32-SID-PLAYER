@@ -2,14 +2,7 @@
 // SID emulation only
 // I use it as base for my projects that need simple sounds or sound effects.
 
-#define AUDIO_OUT       PA8                        // can't be changed, this is just reminder
-
-// core detector
-#ifdef USE_HAL_DRIVER // Official ST cores. Support for multiple line of MPU
-#define USE_STM32duino_CORE //  Set in preferences: https://github.com/stm32duino/BoardManagerFiles/raw/master/package_stmicroelectronics_index.json and search stm32 in board manager. Choose stm32 cores by ST Microelectronics. Select your CPU from tools menu)
-#else
-#define USE_ROGER_CORE //  Set in preferences: http://dan.drown.org/stm32duino/package_STM32duino_index.json and search stm32F1 in board manager. Choose STM32F1xx core (NOTE: Only STM32F1 works)
-#endif
+//#define USE_DAC                             // if defined, use DAC output on pin PA4, if commented out, use PWM on pin PA8 
 
 #include "SID.h"
 
@@ -19,7 +12,7 @@
 // This project is purely for my own entertainment , so WITHOUT ANY WARRANTY!
 // SCHEMATICS:
 //
-//
+// PWM: 
 //    .-----------------.
 //    |                 |
 //    | STM32FxxxXXxx   |
@@ -39,7 +32,23 @@
 //    P1 = 10KOhm potentiometer
 //
 // If <period> is 1 , AUDIO OUT can be connected to PA8 (no need for R1,C1 ). I don't think 1Mhz sample rate will be in hearing range
+/*
+  .------------------------------------------------------.
+  |                                                      |
+  | STM32G31CBU6                                         |
+  .--------------+---------------------------|-----------.
+  |G            P|                                                
+  |N            A|
+  |D            4.----------------------|
+  |                                     --
+  |                                     || P1
+  |                                     ||<------|C|-------| OUDIO OUT
+  |                                     --
+  .-------------------------------------|------------------| GND
+  C = 10 uF
+  P1 = 10KOhm potentiometer
 
+*/
 
 
 

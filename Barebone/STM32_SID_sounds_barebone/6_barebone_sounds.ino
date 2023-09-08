@@ -10,9 +10,12 @@ void error_sound_SD() {
   ADSR_Sustain_1 = 0x06;
   ADSR_Release_1 = 0x0b;
   PW_HiLo_voice_1 = 0x400;
-  //sawtooth_bit_voice_1=1;
+
+  sawtooth_bit_voice_1 = 0;
   triangle_bit_voice_1 = 1;
   pulse_bit_voice_1 = 1;
+  noise_bit_voice_1 = 0;
+
   Gate_bit_1 = 1;
   delay(480);
   OSC_1_HiLo = 0xf000;
@@ -26,16 +29,20 @@ inline void error_sound_ROOT() {
 
   //reset_SID();
 
-  OSC_1_HiLo = 0x1000; 
+  OSC_1_HiLo = 0x1000;
   MASTER_VOLUME  = 0x0f;
   ADSR_Attack_1  = 0x09;
   ADSR_Decay_1  = 0x07;
   ADSR_Sustain_1 = 0x06;
   ADSR_Release_1 = 0x0b;
   PW_HiLo_voice_1 = 0x400;
-  //sawtooth_bit_voice_1=1;
+
+  sawtooth_bit_voice_1 = 0;
   triangle_bit_voice_1 = 1;
   pulse_bit_voice_1 = 1;
+  noise_bit_voice_1 = 0;
+
+
   Gate_bit_1 = 1;
   delay(480);
   OSC_1_HiLo = 0x0800;
@@ -56,10 +63,12 @@ inline void error_open_file() {
   ADSR_Sustain_1 = 0x0f;
   ADSR_Release_1 = 0x05;
   PW_HiLo_voice_1 = 0x400;
-  //sawtooth_bit_voice_1=1;
-  // triangle_bit_voice_1 = 1;
-  //pulse_bit_voice_1 = 1;
-  noise_bit_voice_1;
+
+  sawtooth_bit_voice_1 = 0;
+  triangle_bit_voice_1 = 0;
+  pulse_bit_voice_1 = 0;
+  noise_bit_voice_1 = 1;
+
   Gate_bit_1 = 1;
   delay(480);
   OSC_1_HiLo = 0xc800;
@@ -73,16 +82,19 @@ inline void error_open_folder () {
 
   //reset_SID();
 
-  OSC_1_HiLo = 0x2000; 
+  OSC_1_HiLo = 0x2000;
   MASTER_VOLUME  = 0x0f;
   ADSR_Attack_1  = 0x09;
   ADSR_Decay_1  = 0x07;
   ADSR_Sustain_1 = 0x06;
   ADSR_Release_1 = 0x0b;
   PW_HiLo_voice_1 = 0x400;
-  //sawtooth_bit_voice_1=1;
+
+  sawtooth_bit_voice_1 = 1;
   triangle_bit_voice_1 = 1;
   pulse_bit_voice_1 = 1;
+  noise_bit_voice_1 = 0;
+
   Gate_bit_1 = 1;
   delay(480);
   OSC_1_HiLo = 0x1000;
@@ -102,9 +114,12 @@ inline void error_open_sid () {
   ADSR_Sustain_1 = 0x06;
   ADSR_Release_1 = 0x0b;
   PW_HiLo_voice_1 = 0x400;
-  //sawtooth_bit_voice_1=1;
-  triangle_bit_voice_1 = 1;
+
+  sawtooth_bit_voice_1 = 1;
+  triangle_bit_voice_1 = 0;
   pulse_bit_voice_1 = 1;
+  noise_bit_voice_1 = 0;
+  
   Gate_bit_1 = 1;
   delay(1500);
   OSC_1_HiLo = 0x3f00;
@@ -128,9 +143,12 @@ inline void error_PSID_V2_RAM_OVERFLOW () {
   ADSR_Sustain_1 = 0x06;
   ADSR_Release_1 = 0x0b;
   PW_HiLo_voice_1 = 0x400;
-  //sawtooth_bit_voice_1=1;
+
+  sawtooth_bit_voice_1 = 0;
   triangle_bit_voice_1 = 1;
   pulse_bit_voice_1 = 1;
+  noise_bit_voice_1 = 0;
+  
   Gate_bit_1 = 1;
   delay(1500);
   OSC_1_HiLo = 0x3f00;
